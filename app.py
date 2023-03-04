@@ -53,10 +53,7 @@ def getCategory(img_byte):
                 'Top',
                 'Undershirt']
 
-        # img = tf.io.read_file(file_path)
-
         img = tf.image.decode_image(img_byte, channels=3)
-
         # Resize the image (to the same size our model was trained on)
         img = tf.image.resize(img, size=[299, 299])
 
@@ -74,8 +71,8 @@ def getCategory(img_byte):
             pred_class = classes[int(tf.round(pred)[0][0])]
 
         return pred_class
-    except:
-        return  'Image is Corrupted'
+    except :
+        return  f'Image is Corrupted'
 
 
 def getStyle(image):
@@ -447,6 +444,9 @@ def vh():
 
         if(category =='Image is Corrupted' or style == 'Image is Corrupted'):
             return jsonify('Image is Corrupted')
+
+        if(category =='Body'):
+            category='Kurti'
 
         with ThreadPoolExecutor(max_workers=1) as executor:
 
