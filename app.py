@@ -53,15 +53,14 @@ def getCategory(img_byte):
                 'Top',
                 'Undershirt']
 
-        img = tf.image.decode_image(img_byte, channels=3)
+        img = Image.open(io.BytesIO(img_byte))
         # Resize the image (to the same size our model was trained on)
-        img = tf.image.resize(img, size=[299, 299])
-
+        img = img.resize((299, 299))
+        img=np.array(img)
         # Rescale the image (get all values between 0 and 1)
         img = img/255.
-
         # Make a prediction
-        pred = cate_model.predict(tf.expand_dims(img, axis=0))
+        pred = cate_model.predict(np.expand_dims(img, axis=0))
 
         # Get the predicted class
         if len(pred[0]) > 1:
