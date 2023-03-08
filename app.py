@@ -204,7 +204,7 @@ def getAmazonData(color,style,category):
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--no-sandbox')
     # chrome_options.add_argument('window-size=1920x1080')
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=options)
+    driver = webdriver.Chrome(service=Service('chromedriver.exe'),options=options)
     
     query=f'{color} {style} {category}'
 
@@ -279,7 +279,7 @@ def getMyntraData(color, style, category):
     options.add_argument('--no-sandbox')
     # chrome_options.add_argument('window-size=1920x1080')
     driver = webdriver.Chrome(service=Service(
-        ChromeDriverManager().install()), options=options)
+        'chromedriver.exe'), options=options)
 
     driver.get("https://www.myntra.com/"+query)
 
@@ -446,7 +446,8 @@ def vh():
 
         if(category =='Body'):
             category='Kurti'
-
+        if(category =='Outwear'):
+            category='Jacket'
         with ThreadPoolExecutor(max_workers=1) as executor:
 
     # Pass the parameters to the functions using the `args` parameter
