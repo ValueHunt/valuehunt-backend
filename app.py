@@ -1,9 +1,6 @@
-import time
-
-from flask import Flask, render_template, jsonify, request, redirect, url_for
+from flask import Flask, jsonify, request
 from flask import request, jsonify
 from flask_cors import CORS
-from dotenv import load_dotenv, find_dotenv
 from PIL import Image
 import io
 import pymongo
@@ -145,7 +142,6 @@ def getStyle(image):
 
 
 
-
 app = Flask(__name__)
 CORS(app)
 actual_token = os.environ.get("token")
@@ -156,10 +152,10 @@ db = client["ValueHunt"]
 
 API = os.environ.get("ScrapyAPI")
 
-def get_url(url):
-    payload = {'api_key': API, 'url': url}
-    proxy_url = 'http://api.scraperapi.com/?' + urllib.parse.urlencode(payload)
-    return proxy_url
+# def get_url(url):
+#     payload = {'api_key': API, 'url': url}
+#     proxy_url = 'http://api.scraperapi.com/?' + urllib.parse.urlencode(payload)
+#     return proxy_url
 
 
 def compare(a,b):
@@ -208,12 +204,13 @@ def getAmazonData(color,style,category):
     
     query=f'{color} {style} {category}'
 
-    driver.get('https://www.amazon.in/s?' + urllib.parse.urlencode({'k': query}))
+    driver.get('https://www.amazon.in/s?' + urllib.parse.urlencode({'k': query}) + '&s=price-asc-rank')
     
-    # print ('https://www.amazon.in/s?' + urllib.parse.urlencode({'k': query}))
+    # # print ('https://www.amazon.in/s?' + urllib.parse.urlencode({'k': query}))
     content = driver.page_source
     # print('/*******************************************')
     # print(content)
+  
     soup = BeautifulSoup(content,'lxml')
     try:
         for prod in soup.findAll('div', attrs={'class':'a-section a-spacing-base a-text-center'}):
@@ -233,14 +230,6 @@ def getAmazonData(color,style,category):
                 if(category in check_cate):
                     amazon_output_data.append({'ImageSrc':ImageSrc,'Label':Label,'Price':Price,"ProdLink":ProdLink})
 
-                    # print('************************AMzonCategory*************************************')
-                    # print(amazon_output_data)
-                    # print('*************************************************************')
-
-        # print('************************AMzonCategory*************************************')
-        # print(amazon_output_data)
-        # print('*************************************************************')
-
         amazon_output_data=preprocessPrice(amazon_output_data)
 
         amazon_output_data=sorted(amazon_output_data,key=functools.cmp_to_key(compare))
@@ -252,7 +241,7 @@ def getAmazonData(color,style,category):
             return 'No Data Found'
         return amazon_output_data
     except Exception as e :
-        return f'SOmething went Wrong {e}'
+        return f'Something went Wrong {e}'
 
 
 
@@ -262,6 +251,7 @@ def getMyntraData(color, style, category):
     query=f'{color} {category} {style}'
 
     myntra_output_data = []
+
     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36"
 
     options = webdriver.ChromeOptions()
@@ -281,8 +271,8 @@ def getMyntraData(color, style, category):
     driver = webdriver.Chrome(service=Service(
         'chromedriver.exe'), options=options)
 
-    driver.get("https://www.myntra.com/"+query)
-
+    driver.get("https://www.myntra.com/"+query+'?sort=price_asc')
+    
     content = driver.page_source
     soup = BeautifulSoup(content, 'lxml')
 
@@ -312,8 +302,7 @@ def getMyntraData(color, style, category):
         myntra_output_data=sorted(myntra_output_data,key=functools.cmp_to_key(compare))
 
         myntra_output_data=myntra_output_data[:4]
-        # print('*****************************INside Myntra*****************************')
-        # print(myntra_output_data)
+        
         if(len(myntra_output_data)==0):
             return 'No Data Found'
 
@@ -321,10 +310,6 @@ def getMyntraData(color, style, category):
     except:
         return 'No Data Found'
 
-# for x in getMyntraData('Gucci', 'red', 'floral', 'shirt', 38, 'cotton'):
-#     print('*************************************************************')
-#     print(x)
-#     print('*************************************************************')
 
 def getFlipkartData(brand, color, style, category, size, clothType):
     pass
