@@ -673,24 +673,24 @@ def vh():
         if (category == 'Longsleeve'):
             category = 'Kurta'
 
-        color='grey'
-        with ThreadPoolExecutor(max_workers=2) as executor:
+     
+        with ThreadPoolExecutor(max_workers=4) as executor:
 
             # Pass the parameters to the functions using the `args` parameter
             amazon_future = executor.submit(
                 getAmazonData,brand, color, style, category)
             myntra_future = executor.submit(
                 getMyntraData, brand,color, style, category)
-            # flipkart_future = executor.submit(
-            #     getFlipkartData, brand, color, style, category)
-            # ajio_future = executor.submit(
-            #     getAjioData, brand, color, style, category)
+            flipkart_future = executor.submit(
+                getFlipkartData, brand, color, style, category)
+            ajio_future = executor.submit(
+                getAjioData, brand, color, style, category)
 
             # Wait for the results
             amazon = amazon_future.result()
             myntra = myntra_future.result()
-            # flipkart = flipkart_future.result()
-            # ajio = ajio_future.result()
+            flipkart = flipkart_future.result()
+            ajio = ajio_future.result()
 
        
         print('******************Amazon***************************')
@@ -700,12 +700,12 @@ def vh():
         print('*********************Myntra************************')
         print(myntra)
         print('*********************************************')
-        # print('*********************    Flipkart    ************************')
-        # print(flipkart)
-        # print('*********************************************')
-        # print('*********************    Ajio    ************************')
-        # print(ajio)
-        # print('*********************************************')
+        print('*********************    Flipkart    ************************')
+        print(flipkart)
+        print('*********************************************')
+        print('*********************    Ajio    ************************')
+        print(ajio)
+        print('*********************************************')
       
         res = jsonify({'amazon': amazon, 'myntra': myntra})
 
