@@ -275,6 +275,9 @@ def getAmazonData(brand,color, style, category):
 
     query = f'{color} {style} {category}'
 
+    if(brand!='No Brand'):
+        query = f'{color} {category}'
+
     url ='https://www.amazon.in/s?' + urllib.parse.urlencode({'k': query})
 
     if(brand !='No Brand'):
@@ -299,10 +302,17 @@ def getAmazonData(brand,color, style, category):
             ProdLink = 'https://www.amazon.in/'+ProdLink
             ImageSrc = prod.find('img')['src'].split(',')[0]
             Label = prod.find('span', attrs={
-                              'class': 'a-size-base-plus a-color-base a-text-normal'}).get_text()
+                              'class': 'a-size-base-plus a-color-base a-text-normal'})
             Price = prod.find('span', attrs={'a-price-whole'})
 
-            BrandCheck = prod.find('span',attrs={'class' :'a-size-base-plus a-color-base'}).get_text()
+            BrandCheck = prod.find('span',attrs={'class' :'a-size-base-plus a-color-base'})
+            
+            if(Label):
+                Label =Label.get_text()
+
+            if(BrandCheck):
+                BrandCheck=BrandCheck.get_text()
+            
             # print('***************Brand Check *.........',BrandCheck)
             if (Price):
                 Price = Price.get_text()
@@ -330,13 +340,16 @@ def getAmazonData(brand,color, style, category):
             return 'No Data Found'
         return amazon_output_data
     except Exception as e :
-        return f'Something went Wrong {e}'
+        return f'Something went Wrong'
 
 
 def getMyntraData(brand,color, style, category):
 
     query = f'{color} {style} {category}'
-  
+
+    if(brand!='No Brand'):
+        query = f'{color} {category}'
+
     myntra_output_data = []
 
     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36"
@@ -389,17 +402,27 @@ def getMyntraData(brand,color, style, category):
             ImageSrc = prod.find('source')
 
             Price = prod.find(
-                'span', attrs={'class': 'product-discountedPrice'})
+                'div', attrs={'class': 'product-price'})
+            
+
+            disP=Price.find('span', attrs={'class': 'product-discountedPrice'})
+            if(disP):
+                Price=disP
+                # print('.....................',Price)
 
             if (ImageSrc and Price):
+                # print('......................................')
+                # print(ProdLink,Price)
                 ImageSrc = ImageSrc.find('img')['src']
-                Price = int(Price.get_text().split()[1])
-
+                Price = Price.get_text().split()[1]
+                
                 myntra_output_data.append(
-                    {'ImageSrc': ImageSrc, 'Label': Label, 'Price': str(Price), "ProdLink": ProdLink})
+                    {'ImageSrc': ImageSrc, 'Label': Label, 'Price': Price, "ProdLink": ProdLink})
             else:
                 ImageSrc = None
                 Price = None
+
+        
 
         myntra_output_data = preprocessPrice(myntra_output_data)
 
@@ -638,7 +661,9 @@ def vh():
         print(color)
         print('*********************************************')
         
-        if (category == 'Image is Corrupted' or style == 'Image is Corrupted'):
+        # color='black'
+
+        if (category == 'Image is Corrupted' or style == 'Image is Corrupted' or color =='Your Image is Corupted'):
             return jsonify('Image is Corrupted')
 
         if (category == 'Body'):
@@ -648,23 +673,24 @@ def vh():
         if (category == 'Longsleeve'):
             category = 'Kurta'
 
-        with ThreadPoolExecutor(max_workers=4) as executor:
+        color='grey'
+        with ThreadPoolExecutor(max_workers=2) as executor:
 
             # Pass the parameters to the functions using the `args` parameter
             amazon_future = executor.submit(
                 getAmazonData,brand, color, style, category)
             myntra_future = executor.submit(
                 getMyntraData, brand,color, style, category)
-            flipkart_future = executor.submit(
-                getFlipkartData, brand, color, style, category)
-            ajio_future = executor.submit(
-                getAjioData, brand, color, style, category)
+            # flipkart_future = executor.submit(
+            #     getFlipkartData, brand, color, style, category)
+            # ajio_future = executor.submit(
+            #     getAjioData, brand, color, style, category)
 
             # Wait for the results
             amazon = amazon_future.result()
             myntra = myntra_future.result()
-            flipkart = flipkart_future.result()
-            ajio = ajio_future.result()
+            # flipkart = flipkart_future.result()
+            # ajio = ajio_future.result()
 
        
         print('******************Amazon***************************')
@@ -674,12 +700,12 @@ def vh():
         print('*********************Myntra************************')
         print(myntra)
         print('*********************************************')
-        print('*********************    Flipkart    ************************')
-        print(flipkart)
-        print('*********************************************')
-        print('*********************    Ajio    ************************')
-        print(ajio)
-        print('*********************************************')
+        # print('*********************    Flipkart    ************************')
+        # print(flipkart)
+        # print('*********************************************')
+        # print('*********************    Ajio    ************************')
+        # print(ajio)
+        # print('*********************************************')
       
         res = jsonify({'amazon': amazon, 'myntra': myntra})
 
