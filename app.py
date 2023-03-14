@@ -169,7 +169,7 @@ def get_colors(image_bytes, number_of_colors):
 
     ordered_colors = [center_colors[i] for i in counts.keys()]
     hex_colors = [RGB2HEX(ordered_colors[i]) for i in counts.keys()]
-
+   
     return hex_colors
 
 # **************    Hex-Code to Color Name    ********************
@@ -336,7 +336,7 @@ def getAmazonData(brand,color, style, category):
 def getMyntraData(brand,color, style, category):
 
     query = f'{color} {style} {category}'
-
+  
     myntra_output_data = []
 
     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36"
@@ -360,6 +360,9 @@ def getMyntraData(brand,color, style, category):
 
     query =query.replace(' ','-')
     url = "https://www.myntra.com/"+query
+
+    if(brand=='Adidas'):
+        brand='ADIDAS'
 
     if(brand !='No Brand'):
         brand = brand.replace(' ','%20')
