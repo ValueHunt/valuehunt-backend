@@ -648,7 +648,6 @@ def vh():
             style = style_future.result()
             color=color_future.result()
            
-        
         print('********************Style*************************')
         print(style)
         print('*********************************************')
@@ -660,8 +659,6 @@ def vh():
         print('******************   Color   ***************************')
         print(color)
         print('*********************************************')
-        
-        # color='black'
 
         if (category == 'Image is Corrupted' or style == 'Image is Corrupted' or color =='Your Image is Corupted'):
             return jsonify('Image is Corrupted')
