@@ -1,5 +1,7 @@
+from sklearn.cluster import KMeans
+from io import BytesIO
+from collections import Counter
 from flask import Flask, jsonify, request
-from flask import request, jsonify
 from flask_cors import CORS
 from PIL import Image
 import io
@@ -10,8 +12,7 @@ import urllib
 # ************************************Web Scraping ***************************
 from selenium import webdriver
 from bs4 import BeautifulSoup
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
+
 from selenium.webdriver.chrome.service import Service
 
 # ***************************************Tensorflow and Models *************************
@@ -23,10 +24,15 @@ import cv2
 import functools
 from concurrent.futures import ThreadPoolExecutor
 
-cate_model = load_model(
-    './category.h5')
-style_model = load_model(
-    './SameStyle.h5')
+
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from bs4 import BeautifulSoup
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.common.by import By
+
+cate_model = load_model('./category.h5')
+style_model = load_model('./SameStyle.h5')
 
 
 def getCategory(img_byte):
@@ -140,9 +146,7 @@ def getStyle(image):
 
 # ***************************** Color Model ************************
 # Hex code Generator
-from collections import Counter
-from io import BytesIO
-from sklearn.cluster import KMeans
+
 
 def RGB2HEX(color):
     return "#{:02x}{:02x}{:02x}".format(int(color[0]), int(color[1]), int(color[2]))
@@ -169,7 +173,7 @@ def get_colors(image_bytes, number_of_colors):
 
     ordered_colors = [center_colors[i] for i in counts.keys()]
     hex_colors = [RGB2HEX(ordered_colors[i]) for i in counts.keys()]
-   
+
     return hex_colors
 
 # **************    Hex-Code to Color Name    ********************
@@ -177,18 +181,9 @@ def get_colors(image_bytes, number_of_colors):
 
 def closest_color(hex_color):
     color_dict = {
-        '#F0F8FF': 'aliceblue', '#FAEBD7': 'antiquewhite', '#00FFFF': 'aqua', '#7FFFD4': 'aquamarine', '#F0FFFF': 'azure', '#F5F5DC': 'beige', '#FFE4C4': 'bisque', '#000000': 'black', '#FFEBCD': 'blanchedalmond', '#0000FF': 'blue', '#8A2BE2': 'blueviolet', '#A52A2A': 'brown', '#9E7638': 'Metallic Sunburst',
-        '#DEB887': 'burlywood', '#5F9EA0': 'cadetblue', '#7FFF00': 'chartreuse', '#D2691E': 'chocolate', '#FF7F50': 'coral', '#6495ED': 'cornflowerblue', '#FFF8DC': 'cornsilk', '#DC143C': 'crimson', '#00FFFF': 'cyan', '#00008B': 'darkblue', '#008B8B': 'darkcyan', '#B8860B': 'darkgoldenrod',
-        '#A9A9A9': 'darkgray', '#A9A9A9': 'darkgrey', '#006400': 'darkgreen', '#BDB76B': 'darkkhaki', '#8B008B': 'darkmagenta', '#556B2F': 'darkolivegreen', '#FF8C00': 'darkorange', '#9932CC': 'darkorchid', '#8B0000': 'darkred', '#E9967A': 'darksalmon', '#8FBC8F': 'darkseagreen','#0066FF':'blue','#99FFCC':'Magic Mint',
-        '#483D8B': 'darkslateblue', '#2F4F4F': 'darkslategray', '#2F4F4F': 'darkslategrey', '#00CED1': 'darkturquoise', '#9400D3': 'darkviolet', '#FF1493': 'deeppink', '#00BFFF': 'deepskyblue', '#696969': 'dimgray', '#696969': 'dimgrey', '#1E90FF': 'dodgerblue', '#B22222': 'firebrick','#E2C091':'gold','#C32148':'Maroon',
-        '#FFFAF0': 'floralwhite', '#228B22': 'forestgreen', '#FF00FF': 'fuchsia', '#DCDCDC': 'gainsboro', '#F8F8FF': 'ghostwhite', '#FFD700': 'gold', '#DAA520': 'goldenrod', '#808080': 'gray', '#808080': 'grey', '#008000': 'green', '#ADFF2F': 'greenyellow', '#F0FFF0': 'honeydew', '#FF69B4': 'hotpink',
-        '#CD5C5C': 'indianred', '#4B0082': 'indigo', '#FFFFF0': 'ivory', '#F0E68C': 'khaki', '#E6E6FA': 'lavender', '#FFF0F5': 'lavenderblush', '#7CFC00': 'lawngreen', '#FFFACD': 'lemonchiffon', '#ADD8E6': 'lightblue', '#F08080': 'lightcoral', '#E0FFFF': 'lightcyan', '#FAFAD2': 'lightgoldenrodyellow',
-        '#D3D3D3': 'lightgray', '#D3D3D3': 'lightgrey', '#90EE90': 'lightgreen', '#FFB6C1': 'lightpink', '#FFA07A': 'lightsalmon', '#20B2AA': 'lightseagreen', '#87CEFA': 'lightskyblue', '#778899': 'lightslategray', '#778899': 'lightslategrey', '#B0C4DE': 'lightsteelblue', '#FFFFE0': 'lightyellow',
-        '#00FF00': 'lime', '#32CD32': 'limegreen', '#FAF0E6': 'linen', '#FF00FF': 'magenta', '#800000': 'maroon', '#66CDAA': 'mediumaquamarine', '#0000CD': 'mediumblue', '#BA55D3': 'mediumorchid', '#9370DB': 'mediumpurple', '#3CB371': 'mediumseagreen', '#7B68EE': 'mediumslateblue', '#00FA9A': 'mediumspringgreen',
-        '#48D1CC': 'mediumturquoise', '#C71585': 'mediumvioletred', '#191970': 'midnightblue', '#F5FFFA': 'mintcream', '#FFE4E1': 'mistyrose', '#FFE4B5': 'moccasin', '#FFDEAD': 'navajowhite', '#000080': 'navy', '#FDF5E6': 'oldlace', '#808000': 'olive', '#6B8E23': 'olivedrab', '#FFA500': 'orange', '#FF4500': 'orangered',
-        '#DA70D6': 'orchid', '#EEE8AA': 'palegoldenrod', '#98FB98': 'palegreen', '#AFEEEE': 'paleturquoise', '#DB7093': 'palevioletred', '#FFEFD5': 'papayawhip', '#FFDAB9': 'peachpuff', '#CD853F': 'peru', '#FFC0CB': 'pink', '#DDA0DD': 'plum', '#B0E0E6': 'powderblue', '#800080': 'purple', '#663399': 'rebeccapurple',
-        '#FF0000': 'red', '#BC8F8F': 'rosybrown', '#4169E1': 'royalblue', '#8B4513': 'saddlebrown', '#FA8072': 'salmon', '#F4A460': 'sandybrown', '#2E8B57': 'seagreen', '#FFF5EE': 'seashell', '#A0522D': 'sienna', '#C0C0C0': 'silver', '#87CEEB': 'skyblue', '#6A5ACD': 'slateblue', '#708090': 'slategray', '#708090': 'slategrey',
-        '#FFFAFA': 'snow', '#00FF7F': 'springgreen', '#4682B4': 'steelblue', '#D2B48C': 'tan', '#008080': 'teal', '#D8BFD8': 'thistle', '#FF6347': 'tomato', '#40E0D0': 'turquoise', '#EE82EE': 'violet', '#F5DEB3': 'wheat', '#FFFFFF': 'white', '#F5F5F5': 'whitesmoke', '#FFFF00': 'yellow', '#9ACD32': 'yellowgreen'
+        "#000000": "black", "#FFFFFF": "white", "#FF0000": "red", "#00FF00": "green", "#0000FF": "blue", "#FFFF00": "yellow", "#FFC0CB": "pink", "#800080": "purple", "#FFA500": "orange", "#4B0082": "indigo",
+        "#808080": "gray", "#FFD700": "gold", "#008000": "darkgreen", "#00FFFF": "cyan", "#FF00FF": "magenta", "#DC143C": "crimson", "#ADD8E6": "lightblue", "#FF69B4": "hotpink", "#00BFFF": "deepskyblue",
+        "#87CEEB": "skyblue", "#9400D3": "darkviolet", "#FF1493": "deeppink", "#2E8B57": "seagreen", "#800000": "maroon", "#FFB6C1": "lightpink", "#8B0000": "darkred", "#FF8C00": "darkorange", "#A52A2A": "brown",
     }
 
     min_distance = float('inf')
@@ -206,7 +201,6 @@ def closest_color(hex_color):
 
 
 # ********************************Backend **************************
-
 
 
 app = Flask(__name__)
@@ -249,10 +243,10 @@ def preprocessPrice(li):
     return li
 
 
-def getAmazonData(brand,color, style, category):
+def getAmazonData(brand, color, style, category):
 
     amazon_output_data = []
-    abrand=brand
+    abrand = brand
     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36"
 
     options = webdriver.ChromeOptions()
@@ -275,25 +269,24 @@ def getAmazonData(brand,color, style, category):
 
     query = f'{color} {style} {category}'
 
-    if(brand!='No Brand'):
+    if (brand != 'No Brand'):
         query = f'{color} {category}'
 
-    url ='https://www.amazon.in/s?' + urllib.parse.urlencode({'k': query})
+    url = 'https://www.amazon.in/s?' + urllib.parse.urlencode({'k': query})
 
-    if(brand !='No Brand'):
-        brand = brand.replace(' ','+')
+    if (brand != 'No Brand'):
+        brand = brand.replace(' ', '+')
 
-        url +='&rh=n%3A1571271031%2Cp_89%3A'+brand 
-        
-        
-    url+='&s=price-asc-rank'
+        url += '&rh=n%3A1571271031%2Cp_89%3A'+brand
+
+    url += '&s=price-asc-rank'
     print('*****************************url******************')
     print(url)
     driver.get(url)
 
     content = driver.page_source
- 
-    soup = BeautifulSoup(content,'lxml')
+
+    soup = BeautifulSoup(content, 'lxml')
     try:
         for prod in soup.findAll('div', attrs={'class': 'a-section a-spacing-base a-text-center'}):
             # print('*********************3333333333333333333333333****************')
@@ -305,14 +298,15 @@ def getAmazonData(brand,color, style, category):
                               'class': 'a-size-base-plus a-color-base a-text-normal'})
             Price = prod.find('span', attrs={'a-price-whole'})
 
-            BrandCheck = prod.find('span',attrs={'class' :'a-size-base-plus a-color-base'})
-            
-            if(Label):
-                Label =Label.get_text()
+            BrandCheck = prod.find(
+                'span', attrs={'class': 'a-size-base-plus a-color-base'})
 
-            if(BrandCheck):
-                BrandCheck=BrandCheck.get_text()
-            
+            if (Label):
+                Label = Label.get_text()
+
+            if (BrandCheck):
+                BrandCheck = BrandCheck.get_text()
+
             # print('***************Brand Check *.........',BrandCheck)
             if (Price):
                 Price = Price.get_text()
@@ -322,14 +316,14 @@ def getAmazonData(brand,color, style, category):
                 category = category.lower()
                 if (category in check_cate):
 
-                    if(abrand !='No Brand' and abrand == BrandCheck):
+                    if (abrand != 'No Brand' and abrand == BrandCheck):
                         amazon_output_data.append(
                             {'ImageSrc': ImageSrc, 'Label': Label, 'Price': Price, "ProdLink": ProdLink})
-                    elif (abrand =='No Brand'):
+                    elif (abrand == 'No Brand'):
                         amazon_output_data.append(
                             {'ImageSrc': ImageSrc, 'Label': Label, 'Price': Price, "ProdLink": ProdLink})
 
-        amazon_output_data=preprocessPrice(amazon_output_data)
+        amazon_output_data = preprocessPrice(amazon_output_data)
 
         amazon_output_data = sorted(
             amazon_output_data, key=functools.cmp_to_key(compare))
@@ -339,15 +333,15 @@ def getAmazonData(brand,color, style, category):
         if (len(amazon_output_data) == 0):
             return 'No Data Found'
         return amazon_output_data
-    except Exception as e :
+    except Exception as e:
         return f'Something went Wrong'
 
 
-def getMyntraData(brand,color, style, category):
+def getMyntraData(brand, color, style, category):
 
     query = f'{color} {style} {category}'
 
-    if(brand!='No Brand'):
+    if (brand != 'No Brand'):
         query = f'{color} {category}'
 
     myntra_output_data = []
@@ -371,24 +365,24 @@ def getMyntraData(brand,color, style, category):
     driver = webdriver.Chrome(service=Service(
         'chromedriver.exe'), options=options)
 
-    query =query.replace(' ','-')
+    query = query.replace(' ', '-')
     url = "https://www.myntra.com/"+query
 
-    if(brand=='Adidas'):
-        brand='ADIDAS'
+    if (brand == 'Adidas'):
+        brand = 'ADIDAS'
 
-    if(brand !='No Brand'):
-        brand = brand.replace(' ','%20')
+    if (brand != 'No Brand'):
+        brand = brand.replace(' ', '%20')
 
-        url +='?f=Brand%3A'+brand +'&sort=price_asc'
+        url += '?f=Brand%3A'+brand + '&sort=price_asc'
     else:
-        url+='?sort=price_asc'
+        url += '?sort=price_asc'
 
     print('*****************************url******************')
     print(url)
 
     driver.get(url)
-    
+
     content = driver.page_source
     soup = BeautifulSoup(content, 'lxml')
 
@@ -403,11 +397,11 @@ def getMyntraData(brand,color, style, category):
 
             Price = prod.find(
                 'div', attrs={'class': 'product-price'})
-            
 
-            disP=Price.find('span', attrs={'class': 'product-discountedPrice'})
-            if(disP):
-                Price=disP
+            disP = Price.find(
+                'span', attrs={'class': 'product-discountedPrice'})
+            if (disP):
+                Price = disP
                 # print('.....................',Price)
 
             if (ImageSrc and Price):
@@ -415,23 +409,21 @@ def getMyntraData(brand,color, style, category):
                 # print(ProdLink,Price)
                 ImageSrc = ImageSrc.find('img')['src']
                 Price = Price.get_text().split()[1]
-                
+
                 myntra_output_data.append(
                     {'ImageSrc': ImageSrc, 'Label': Label, 'Price': Price, "ProdLink": ProdLink})
             else:
                 ImageSrc = None
                 Price = None
 
-        
-
         myntra_output_data = preprocessPrice(myntra_output_data)
 
         myntra_output_data = sorted(
             myntra_output_data, key=functools.cmp_to_key(compare))
 
-        myntra_output_data=myntra_output_data[:4]
-        
-        if(len(myntra_output_data)==0):
+        myntra_output_data = myntra_output_data[:4]
+
+        if (len(myntra_output_data) == 0):
             return 'No Data Found'
 
         return myntra_output_data
@@ -444,10 +436,23 @@ def getMyntraData(brand,color, style, category):
 
 def getFlipkartData(brand, color, style, category):
     flipkart_output_data = []
-
+    if category == 'Polo':
+        category = 't-shirt'
+    brandurl = f'https://www.flipkart.com/search?q={category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&color={color}&p[]=facets.brand%255B%255D%3D'
     url = f'https://www.flipkart.com/search?q={category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&style={style}&color={color}'
     prodLink = 'https://www.flipkart.com'
-    response = requests.get(url)
+    rurl = ''
+    if brand == 'No Brand' or brand == '':
+        response = requests.get(url)
+        queryURL = url
+    else:
+        if ' ' in brand:
+            brand = brand.replace(' ', '%2B')
+        brandurl += brand
+        response = requests.get(brandurl)
+        queryURL = brandurl
+    print('*****************************  🔎  url     ******************')
+    print(queryURL)
     soup = BeautifulSoup(response.content, 'lxml')
     try:
         products = soup.find_all('div', {'class': '_13oc-S'})
@@ -458,8 +463,9 @@ def getFlipkartData(brand, color, style, category):
             prLink = pr.find_all('a', {'class': '_2UzuFa'})
             prImageLink = pr.find_all('img', {'class': '_2r_T1I'})
             for itemImageSrc, itemName, itemPrice, itemLink in zip(prImageLink, prName, prPrice, prLink):
-                flipkart_output_data.append({'ImageSrc': (itemImageSrc.get(
-                    'src')), 'Label': itemName.text, 'Price': itemPrice.text[1:], 'ProdLink': prodLink+(itemLink.get('href'))})
+                if itemLink.find('span', {'class': '_192laR'}) is None:
+                    flipkart_output_data.append({'ImageSrc': (itemImageSrc.get(
+                        'src')), 'Label': itemName.text, 'Price': itemPrice.text[1:], 'ProdLink': prodLink+(itemLink.get('href'))})
 
         flipkart_output_data = preprocessPrice(flipkart_output_data)
 
@@ -472,17 +478,11 @@ def getFlipkartData(brand, color, style, category):
             return 'No Data Found'
         return flipkart_output_data
     except Exception as e:
-        return f'SOmething went Wrong {e}'
+        return f'Something went Wrong {e}'
 
 
 def getAjioData(brand, color, style, category):
 
-    from selenium import webdriver
-    from selenium.webdriver.common.keys import Keys
-    from bs4 import BeautifulSoup
-    from selenium.webdriver.chrome.service import Service as ChromeService
-    from webdriver_manager.chrome import ChromeDriverManager
-    from selenium.webdriver.common.by import By
 
     options = webdriver.ChromeOptions()
     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36"
@@ -500,14 +500,22 @@ def getAjioData(brand, color, style, category):
     options.add_argument('--disable-gpu')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--no-sandbox')
-    
+
     url = f'https://www.ajio.com/search/?text={style} {color} {category}'
-
-    driver = webdriver.Chrome(options=options, service=ChromeService(
-        'chromedriver.exe'))
+    driver = webdriver.Chrome(
+        options=options, service=ChromeService('chromedriver.exe'))
     try:
-        driver.get(url)
-
+        if brand == 'No Brand' or brand == '':
+            queryURL = url
+            driver.get(url)
+        else:
+            if ' ' in brand:
+                brand = brand.replace(' ', '%20')
+            brandurl = f'https://www.ajio.com/search/?query=%3Arelevance%3Abrand%3A{brand}&text={color} {category}&gridColumns=5'
+            queryURL = brandurl
+            driver.get(brandurl)
+        print('*****************************  🔎 url   ******************')
+        print(queryURL)
         elem = driver.find_element(by=By.TAG_NAME, value='body')
         while True:
             elem.send_keys(Keys.PAGE_DOWN)
@@ -522,9 +530,13 @@ def getAjioData(brand, color, style, category):
         ajio_output_data = []
         for pr in products:
             if pr.find('img').get('src') != None:
-                ajio_output_data.append({'ImgSrc': pr.find('img').get('src'), 'Label': pr.find('div', {'class': 'nameCls'}).text, 'Price': pr.find(
-                    'span', {'class': 'price'}).text[1:], 'ProdLink': (baseurl+pr.find('a', {'class': 'rilrtl-products-list__link'}).get('href'))})
-        
+                if (category == 'Shirt' and ('t-shirts' not in (pr.find('div', {'class': 'nameCls'}).text) and 'T-Shirts' not in (pr.find('div', {'class': 'nameCls'}).text) and 't-shirt' not in (pr.find('div', {'class': 'nameCls'}).text) and 'T-Shirt' not in (pr.find('div', {'class': 'nameCls'}).text) and 'T-shirt' not in (pr.find('div', {'class': 'nameCls'}).text) and 'Top' not in (pr.find('div', {'class': 'nameCls'}).text) and 'top' not in (pr.find('div', {'class': 'nameCls'}).text) and 'TOP' not in (pr.find('div', {'class': 'nameCls'}).text))):
+                    ajio_output_data.append({'ImageSrc': pr.find('img').get('src'), 'Label': pr.find('div', {'class': 'nameCls'}).text, 'Price': pr.find(
+                        'span', {'class': 'price'}).text[1:], 'ProdLink': (baseurl+pr.find('a', {'class': 'rilrtl-products-list__link'}).get('href'))})
+                else:
+                    ajio_output_data.append({'ImageSrc': pr.find('img').get('src'), 'Label': pr.find('div', {'class': 'nameCls'}).text, 'Price': pr.find(
+                        'span', {'class': 'price'}).text[1:], 'ProdLink': (baseurl+pr.find('a', {'class': 'rilrtl-products-list__link'}).get('href'))})
+
         ajio_output_data = preprocessPrice(ajio_output_data)
 
         ajio_output_data = sorted(
@@ -536,26 +548,26 @@ def getAjioData(brand, color, style, category):
             return 'No Data Found'
         return ajio_output_data
     except Exception as e:
-        return f'SOmething went Wrong {e}'
+        return f'Something went Wrong {e}'
 
 
 def getColor(clothImg_bytes):
     try:
         # It returns list of hex code
         hexCode = get_colors(clothImg_bytes, 1)[0]
-        return closest_color(hexCode)
+        return closest_color(hexCode), hexCode
     except:
-        return 'Your Image is Corupted'
+        return 'Your Image is Corupted', hexCode
 
 
-# *****************************Validator****************
+# ***************************** Validator ****************
 def validate(token):
     if (token == actual_token):
         return True
     return False
 
 
-# *********************************Insert Contact***************************
+# ********************************* Insert Contact ***************************
 def insertContact(name, email, msg):
     try:
 
@@ -602,7 +614,7 @@ def insertVh(clothImg, brand):
         return jsonify("It's our problem not yours")
 
 
-# ***********************************Contact Route************************
+# *********************************** Contact Route ************************
 @app.route("/contact", methods=['POST'])
 def contact():
     headers = request.headers
@@ -620,7 +632,7 @@ def contact():
     return jsonify('You are not authenticated')
 
 
-# ***********************************VH Route************************
+# *********************************** VH Route ************************
 @app.route("/vh", methods=['POST'])
 def vh():
     headers = request.headers
@@ -631,36 +643,37 @@ def vh():
         clothImg = request.files['clothImg']
 
         image_bytes = clothImg.read()
-        
+
         brand = request.form.get('brand')
-   
+
         insertVh(clothImg, brand)
 
         with ThreadPoolExecutor(max_workers=3) as executor:
 
-            category_future = executor.submit(getCategory,image_bytes)
+            category_future = executor.submit(getCategory, image_bytes)
 
-            style_future = executor.submit( getStyle, image_bytes)
+            style_future = executor.submit(getStyle, image_bytes)
 
             color_future = executor.submit(getColor,  image_bytes)
 
-            category=category_future.result()
+            category = category_future.result()
             style = style_future.result()
-            color=color_future.result()
-           
+            color, hexCode = color_future.result()
+
         print('********************Style*************************')
         print(style)
         print('*********************************************')
-       
+
         print('******************Category***************************')
         print(category)
         print('*********************************************')
-        
-        print('******************   Color   ***************************')
-        print(color)
+
+        print(
+            '******************   Color and Hex code of image   ***************************')
+        print(color, ' and Hex code  : ', hexCode)
         print('*********************************************')
 
-        if (category == 'Image is Corrupted' or style == 'Image is Corrupted' or color =='Your Image is Corupted'):
+        if (category == 'Image is Corrupted' or style == 'Image is Corrupted' or color == 'Your Image is Corupted'):
             return jsonify('Image is Corrupted')
 
         if (category == 'Body'):
@@ -670,31 +683,29 @@ def vh():
         if (category == 'Longsleeve'):
             category = 'Kurta'
 
-     
         with ThreadPoolExecutor(max_workers=4) as executor:
 
             # Pass the parameters to the functions using the `args` parameter
             amazon_future = executor.submit(
-                getAmazonData,brand, color, style, category)
+                getAmazonData, brand, color, style, category)
             myntra_future = executor.submit(
-                getMyntraData, brand,color, style, category)
-            flipkart_future = executor.submit(
-                getFlipkartData, brand, color, style, category)
+                getMyntraData, brand, color, style, category)
             ajio_future = executor.submit(
                 getAjioData, brand, color, style, category)
+            flipkart_future = executor.submit(
+                getFlipkartData, brand, color, style, category)
 
             # Wait for the results
             amazon = amazon_future.result()
             myntra = myntra_future.result()
-            flipkart = flipkart_future.result()
             ajio = ajio_future.result()
+            flipkart = flipkart_future.result()
 
-       
-        print('******************Amazon***************************')
+        print('******************   Amazon     ***************************')
         print(amazon)
         print('*********************************************')
-      
-        print('*********************Myntra************************')
+
+        print('*********************    Myntra     ************************')
         print(myntra)
         print('*********************************************')
         print('*********************    Flipkart    ************************')
@@ -703,9 +714,15 @@ def vh():
         print('*********************    Ajio    ************************')
         print(ajio)
         print('*********************************************')
-      
-        res = jsonify({'amazon': amazon, 'myntra': myntra})
+        # flipkart = getFlipkartData(brand, color, style, category, size, clothType)
+        # ajio = getAjioData(brand, color, style, category, size, clothType)
 
+        # add this here (ajio,flipkart)
+        res = jsonify({'amazon': amazon, 'myntra': myntra,
+                      'flipkart': flipkart, 'ajio': ajio})
+        # print('*********************REs************************')
+        # # print(res.json())
+        # print('*********************************************')
         return res
 
     return jsonify('You are not authenticated')
