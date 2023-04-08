@@ -12,7 +12,7 @@ import urllib
 # ************************************Web Scraping ***************************
 from selenium import webdriver
 from bs4 import BeautifulSoup
-
+from time import sleep
 from selenium.webdriver.chrome.service import Service
 
 # ***************************************Tensorflow and Models *************************
@@ -32,29 +32,14 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
 
 cate_model = load_model('./category.h5')
-style_model = load_model('./SameStyle.h5')
+style_model = load_model('./style.h5')
 
 
 def getCategory(img_byte):
 
     try:
 
-        classes = ['Blazer',
-                   'Body',
-                   'Dress',
-                   'Hat',
-                   'Hoodie',
-                   'Longsleeve',
-                   'Outwear',
-                   'Pants',
-                   'Polo',
-                   'Shirt',
-                   'Shoes',
-                   'Shorts',
-                   'Skirt',
-                   'T-Shirt',
-                   'Top',
-                   'Undershirt']
+        classes=['Hat', 'Hoodie', 'Pants', 'Shirt', 'Shoes', 'T-Shirt', 'Vest']
 
         img = Image.open(io.BytesIO(img_byte))
         # Resize the image (to the same size our model was trained on)
@@ -75,7 +60,6 @@ def getCategory(img_byte):
         return pred_class
     except:
         return f'Image is Corrupted'
-
 
 def getStyle(image):
 
@@ -213,10 +197,6 @@ db = client["ValueHunt"]
 
 API = os.environ.get("ScrapyAPI")
 
-# def get_url(url):
-#     payload = {'api_key': API, 'url': url}
-#     proxy_url = 'http://api.scraperapi.com/?' + urllib.parse.urlencode(payload)
-#     return proxy_url
 
 
 def compare(a, b):
@@ -382,7 +362,7 @@ def getMyntraData(brand, color, style, category):
     print(url)
 
     driver.get(url)
-
+    sleep(1)
     content = driver.page_source
     soup = BeautifulSoup(content, 'lxml')
 
@@ -676,12 +656,7 @@ def vh():
         if (category == 'Image is Corrupted' or style == 'Image is Corrupted' or color == 'Your Image is Corupted'):
             return jsonify('Image is Corrupted')
 
-        if (category == 'Body'):
-            category = 'Kurti'
-        if (category == 'Outwear'):
-            category = 'Jacket'
-        if (category == 'Longsleeve'):
-            category = 'Kurta'
+   
 
         with ThreadPoolExecutor(max_workers=4) as executor:
 
@@ -701,6 +676,7 @@ def vh():
             ajio = ajio_future.result()
             flipkart = flipkart_future.result()
 
+     
         print('******************   Amazon     ***************************')
         print(amazon)
         print('*********************************************')
@@ -714,15 +690,10 @@ def vh():
         print('*********************    Ajio    ************************')
         print(ajio)
         print('*********************************************')
-        # flipkart = getFlipkartData(brand, color, style, category, size, clothType)
-        # ajio = getAjioData(brand, color, style, category, size, clothType)
-
-        # add this here (ajio,flipkart)
+       
         res = jsonify({'amazon': amazon, 'myntra': myntra,
                       'flipkart': flipkart, 'ajio': ajio})
-        # print('*********************REs************************')
-        # # print(res.json())
-        # print('*********************************************')
+       
         return res
 
     return jsonify('You are not authenticated')
