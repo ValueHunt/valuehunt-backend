@@ -431,6 +431,8 @@ def getFlipkartData(brand, color, style, category):
     flipkart_output_data = []
     if category == 'Hat':
         category = 'cap'
+    
+
     brandurl = f'https://www.flipkart.com/search?q={category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&color={color}&p[]=facets.brand%255B%255D%3D'
     url = f'https://www.flipkart.com/search?q={category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&style={style}&color={color}'
     prodLink = 'https://www.flipkart.com'
@@ -456,7 +458,7 @@ def getFlipkartData(brand, color, style, category):
             prLink = pr.find_all('a', {'class': '_2UzuFa'})
             prImageLink = pr.find_all('img', {'class': '_2r_T1I'})
             for itemImageSrc, itemName, itemPrice, itemLink in zip(prImageLink, prName, prPrice, prLink):
-                if itemLink.find('span', {'class': '_192laR'}) is None and (category.lower() in itemName.text.lower().split(' ')):
+                if itemLink.find('span', {'class': '_192laR'}) is None and (category.lower() in itemName.text.lower().split(' ') or (category=='Hoodie' and 'full sleeve' in itemName.text.lower().split(' '))):
                     flipkart_output_data.append({'ImageSrc': (itemImageSrc.get(
                         'src')), 'Label': itemName.text, 'Price': itemPrice.text[1:], 'ProdLink': prodLink+(itemLink.get('href'))})
 
