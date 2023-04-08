@@ -14,7 +14,8 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 from time import sleep
 from selenium.webdriver.chrome.service import Service
-
+from selenium.webdriver.chrome.service import Service as ChromeService
+from time import sleep
 # ***************************************Tensorflow and Models *************************
 from tensorflow.keras.models import load_model
 import tensorflow as tf
@@ -24,13 +25,6 @@ import cv2
 import functools
 from concurrent.futures import ThreadPoolExecutor
 
-
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from bs4 import BeautifulSoup
-from selenium.webdriver.chrome.service import Service as ChromeService
-from selenium.webdriver.common.by import By
-
 cate_model = load_model('./category.h5')
 style_model = load_model('./style.h5')
 
@@ -39,7 +33,7 @@ def getCategory(img_byte):
 
     try:
 
-        classes=['Hat', 'Hoodie', 'Pants', 'Shirt', 'Shoes', 'T-Shirt', 'Vest']
+        classes=['Hat', 'Hoodie', 'Jeans', 'Shirt', 'Shoes', 'T-Shirt', 'Vest']
 
         img = Image.open(io.BytesIO(img_byte))
         # Resize the image (to the same size our model was trained on)
@@ -165,9 +159,9 @@ def get_colors(image_bytes, number_of_colors):
 
 def closest_color(hex_color):
     color_dict = {
-        "#000000": "black", "#FFFFFF": "white", "#FF0000": "red", "#00FF00": "green", "#0000FF": "blue", "#FFFF00": "yellow", "#FFC0CB": "pink", "#800080": "purple", "#FFA500": "orange", "#4B0082": "indigo",
-        "#808080": "gray", "#FFD700": "gold", "#008000": "darkgreen", "#00FFFF": "cyan", "#FF00FF": "magenta", "#DC143C": "crimson", "#ADD8E6": "lightblue", "#FF69B4": "hotpink", "#00BFFF": "deepskyblue",
-        "#87CEEB": "skyblue", "#9400D3": "darkviolet", "#FF1493": "deeppink", "#2E8B57": "seagreen", "#800000": "maroon", "#FFB6C1": "lightpink", "#8B0000": "darkred", "#FF8C00": "darkorange", "#A52A2A": "brown",
+        "#000000": "black", "#FFFFFF": "white", "#FF0000": "red", "#00FF00": "green", "#0000FF": "blue", "#FFFF00": "yellow",
+        "#FFA500": "orange", "#A52A2A": "brown", "#800080": "purple", "#808080": "grey", "#008000": "darkgreen", "#ADD8E6": "lightblue",
+        "#FF69B4": "pink", "#00BFFF": "deepskyblue", "#FF1493": "deeppink", "#800000": "maroon", "#FFB6C1": "lightpink", "#FF8C00": "darkorange",
     }
 
     min_distance = float('inf')
@@ -416,8 +410,8 @@ def getMyntraData(brand, color, style, category):
 
 def getFlipkartData(brand, color, style, category):
     flipkart_output_data = []
-    if category == 'Polo':
-        category = 't-shirt'
+    if category == 'Hat':
+        category = 'cap'
     brandurl = f'https://www.flipkart.com/search?q={category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&color={color}&p[]=facets.brand%255B%255D%3D'
     url = f'https://www.flipkart.com/search?q={category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&style={style}&color={color}'
     prodLink = 'https://www.flipkart.com'
@@ -443,7 +437,7 @@ def getFlipkartData(brand, color, style, category):
             prLink = pr.find_all('a', {'class': '_2UzuFa'})
             prImageLink = pr.find_all('img', {'class': '_2r_T1I'})
             for itemImageSrc, itemName, itemPrice, itemLink in zip(prImageLink, prName, prPrice, prLink):
-                if itemLink.find('span', {'class': '_192laR'}) is None:
+                if itemLink.find('span', {'class': '_192laR'}) is None and (category.lower() in itemName.text.lower().split(' ')):
                     flipkart_output_data.append({'ImageSrc': (itemImageSrc.get(
                         'src')), 'Label': itemName.text, 'Price': itemPrice.text[1:], 'ProdLink': prodLink+(itemLink.get('href'))})
 
@@ -462,8 +456,6 @@ def getFlipkartData(brand, color, style, category):
 
 
 def getAjioData(brand, color, style, category):
-
-
     options = webdriver.ChromeOptions()
     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36"
     options.add_argument('--ignore-certificate-errors')
@@ -496,26 +488,33 @@ def getAjioData(brand, color, style, category):
             driver.get(brandurl)
         print('*****************************  🔎 url   ******************')
         print(queryURL)
-        elem = driver.find_element(by=By.TAG_NAME, value='body')
         while True:
-            elem.send_keys(Keys.PAGE_DOWN)
 
+            last_height = driver.execute_script(
+                "return document.body.scrollHeight")
+            driver.execute_script(
+                "window.scrollTo(0, document.body.scrollHeight);")
+            sleep(1)
+            new_height = driver.execute_script(
+                "return document.body.scrollHeight")
             soup = BeautifulSoup(driver.page_source, 'lxml')
+
             products = soup.find_all(
                 'div', {'class': 'item rilrtl-products-list__item item'})
-            if len(products) >= 20:
+            if new_height == last_height or len(products) >= 20:
                 break
-
         baseurl = 'https://www.ajio.com'
         ajio_output_data = []
         for pr in products:
             if pr.find('img').get('src') != None:
-                if (category == 'Shirt' and ('t-shirts' not in (pr.find('div', {'class': 'nameCls'}).text) and 'T-Shirts' not in (pr.find('div', {'class': 'nameCls'}).text) and 't-shirt' not in (pr.find('div', {'class': 'nameCls'}).text) and 'T-Shirt' not in (pr.find('div', {'class': 'nameCls'}).text) and 'T-shirt' not in (pr.find('div', {'class': 'nameCls'}).text) and 'Top' not in (pr.find('div', {'class': 'nameCls'}).text) and 'top' not in (pr.find('div', {'class': 'nameCls'}).text) and 'TOP' not in (pr.find('div', {'class': 'nameCls'}).text))):
+                # if (category == 'Shirt' and ('t-shirts' not in (pr.find('div', {'class': 'nameCls'}).text) and 'T-Shirts' not in (pr.find('div', {'class': 'nameCls'}).text) and 't-shirt' not in (pr.find('div', {'class': 'nameCls'}).text) and 'T-Shirt' not in (pr.find('div', {'class': 'nameCls'}).text) and 'T-shirt' not in (pr.find('div', {'class': 'nameCls'}).text) and 'Top' not in (pr.find('div', {'class': 'nameCls'}).text) and 'top' not in (pr.find('div', {'class': 'nameCls'}).text) and 'TOP' not in (pr.find('div', {'class': 'nameCls'}).text))):
+                name = pr.find('div', {'class': 'nameCls'}).text
+                if (category.lower() in name.lower().split(' ')):
                     ajio_output_data.append({'ImageSrc': pr.find('img').get('src'), 'Label': pr.find('div', {'class': 'nameCls'}).text, 'Price': pr.find(
                         'span', {'class': 'price'}).text[1:], 'ProdLink': (baseurl+pr.find('a', {'class': 'rilrtl-products-list__link'}).get('href'))})
-                else:
-                    ajio_output_data.append({'ImageSrc': pr.find('img').get('src'), 'Label': pr.find('div', {'class': 'nameCls'}).text, 'Price': pr.find(
-                        'span', {'class': 'price'}).text[1:], 'ProdLink': (baseurl+pr.find('a', {'class': 'rilrtl-products-list__link'}).get('href'))})
+                # else:
+                #     ajio_output_data.append({'ImageSrc': pr.find('img').get('src'), 'Label': pr.find('div', {'class': 'nameCls'}).text, 'Price': pr.find(
+                #         'span', {'class': 'price'}).text[1:], 'ProdLink': (baseurl+pr.find('a', {'class': 'rilrtl-products-list__link'}).get('href'))})
 
         ajio_output_data = preprocessPrice(ajio_output_data)
 
