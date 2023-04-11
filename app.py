@@ -1,6 +1,4 @@
-from sklearn.cluster import KMeans
 from io import BytesIO
-from collections import Counter
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from PIL import Image
@@ -8,7 +6,6 @@ import io
 import pymongo
 import os
 import requests
-import urllib
 # ************************************Web Scraping ***************************
 from selenium import webdriver
 from bs4 import BeautifulSoup
@@ -612,16 +609,16 @@ def vh():
             style = style_future.result()
             color = color_future.result()
 
-        print('********************Style*************************')
+        print('********************  Style    *************************')
         print(style)
         print('*********************************************')
 
-        print('******************Category***************************')
+        print('******************      Category   ***************************')
         print(category)
         print('*********************************************')
 
         print(
-            '******************   Color and Hex code of image   ***************************')
+            '******************   Color ***************************')
         print(color)
         print('*********************************************')
 
