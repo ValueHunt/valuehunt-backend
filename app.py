@@ -453,7 +453,12 @@ def getAjioData(brand, color, style, category):
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--no-sandbox')
 
-    url = f'https://www.ajio.com/search/?text={style} {color} {category}&gridColumns=5'
+
+    color = color.capitalize()
+    if category == 'Jeans':
+        url = f'https://www.ajio.com/s/jeans-3571-88891?query=%3Arelevance%3Averticalcolorfamily%3A{color}&curated=true&curatedid=jeans-3571-88891&gridColumns=5&segmentIds='
+    else:
+        url = f'https://www.ajio.com/search/?text={style} {color} {category}&gridColumns=5'
     driver = webdriver.Chrome(
         options=options, service=ChromeService('chromedriver.exe'))
     try:
@@ -461,10 +466,19 @@ def getAjioData(brand, color, style, category):
             queryURL = url
             driver.get(url)
         else:
-            if ' ' in brand:
-                brand = brand.replace(' ', '%20')
-            brandurl = f'https://www.ajio.com/search/?query=%3Arelevance%3Abrand%3A{brand}&text={color} {category}&gridColumns=5'
-            queryURL = brandurl
+            brandurl = ''
+            if category == 'Jeans':
+                brand = brand.upper()
+                if ' ' in brand:
+                    brand = brand.replace(' ', '%20')
+                brandurl += f'https://www.ajio.com/s/jeans-3571-88891?query=%3Arelevance%3Averticalcolorfamily%3A{color}%3Abrand%3A{brand}&curated=true&curatedid=jeans-3571-88891&gridColumns=5&segmentIds='
+                queryURL = brandurl
+            else:
+                if ' ' in brand:
+                    brand = brand.replace(' ', '%20')
+                brandurl += f'https://www.ajio.com/search/?query=%3Arelevance%3Abrand%3A{brand}&text={color} {category}&gridColumns=5'
+                queryURL = brandurl
+                driver.get(brandurl)
             driver.get(brandurl)
         print('*****************************  🔎 url   ******************')
         print(queryURL)
