@@ -1,6 +1,4 @@
-from sklearn.cluster import KMeans
 from io import BytesIO
-from collections import Counter
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from PIL import Image
@@ -12,7 +10,6 @@ import urllib
 # ************************************Web Scraping ***************************
 from selenium import webdriver
 from bs4 import BeautifulSoup
-from time import sleep
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.service import Service as ChromeService
 from time import sleep
@@ -21,19 +18,22 @@ from tensorflow.keras.models import load_model
 import tensorflow as tf
 import numpy as np
 import cv2
+from tensorflow import keras
 
 import functools
 from concurrent.futures import ThreadPoolExecutor
 
 cate_model = load_model('./category.h5')
 style_model = load_model('./style.h5')
+color_model = load_model('./Color.h5')
 
 
 def getCategory(img_byte):
 
     try:
 
-        classes=['Hat', 'Hoodie', 'Jeans', 'Shirt', 'Shoes', 'T-Shirt', 'Vest']
+        classes = ['Cap', 'Hoodie', 'Jeans',
+                   'Shirt', 'Shoes', 'T-Shirt', 'Vest']
 
         img = Image.open(io.BytesIO(img_byte))
         # Resize the image (to the same size our model was trained on)
@@ -54,6 +54,7 @@ def getCategory(img_byte):
         return pred_class
     except:
         return f'Image is Corrupted'
+
 
 def getStyle(image):
 
@@ -123,59 +124,29 @@ def getStyle(image):
 
 
 # ***************************** Color Model ************************
-# Hex code Generator
 
 
-def RGB2HEX(color):
-    return "#{:02x}{:02x}{:02x}".format(int(color[0]), int(color[1]), int(color[2]))
+def getColor(clothImg_bytes):
+    try:
+        # Load image from bytes
+        img = Image.open(BytesIO(clothImg_bytes))
+        img = img.resize((90, 90))  # Resize the image to (90, 90) if necessary
+        test_image = keras.preprocessing.image.img_to_array(img)
 
+        test_image = np.expand_dims(test_image, axis=0)
+        test_image /= 255.0
 
-def get_colors(image_bytes, number_of_colors):
-    # Load image from bytes
-    img = Image.open(BytesIO(image_bytes))
-    # Convert to numpy array
-    image = np.array(img)
-    modified_image = cv2.resize(
-        image, (100, 100), interpolation=cv2.INTER_AREA)
-    modified_image = modified_image.reshape(
-        modified_image.shape[0]*modified_image.shape[1], 3)
+        # class_names = {v: k for k, v in train_ds.class_indices.items()}
+        # print(class_names)
+        class_names = {0: 'black', 1: 'blue', 2: 'brown', 3: 'green', 4: 'grey', 5: 'orange',
+                       6: 'pink', 7: 'purple', 8: 'red', 9: 'silver', 10: 'white', 11: 'yellow'}
+        predicted_labels = color_model.predict(test_image)
+        predicted_label = class_names[np.argmax(predicted_labels)]
 
-    clf = KMeans(n_clusters=number_of_colors, n_init='auto')
-    labels = clf.fit_predict(modified_image)
-
-    counts = Counter(labels)
-
-    counts = dict(sorted(counts.items()))
-
-    center_colors = clf.cluster_centers_
-
-    ordered_colors = [center_colors[i] for i in counts.keys()]
-    hex_colors = [RGB2HEX(ordered_colors[i]) for i in counts.keys()]
-
-    return hex_colors
-
-# **************    Hex-Code to Color Name    ********************
-
-
-def closest_color(hex_color):
-    color_dict = {
-        "#000000": "black", "#FFFFFF": "white", "#FF0000": "red", "#00FF00": "green", "#0000FF": "blue", "#FFFF00": "yellow",
-        "#FFA500": "orange", "#A52A2A": "brown", "#800080": "purple", "#808080": "grey", "#008000": "darkgreen", "#ADD8E6": "lightblue",
-        "#FF69B4": "pink", "#00BFFF": "deepskyblue", "#FF1493": "deeppink", "#800000": "maroon", "#FFB6C1": "lightpink", "#FF8C00": "darkorange",
-    }
-
-    min_distance = float('inf')
-    closest_color = None
-
-    for color_hex, color_name in color_dict.items():
-        distance = ((int(hex_color[1:3], 16) - int(color_hex[1:3], 16)) ** 2 +
-                    (int(hex_color[3:5], 16) - int(color_hex[3:5], 16)) ** 2 +
-                    (int(hex_color[5:], 16) - int(color_hex[5:], 16)) ** 2) ** 0.5
-        if distance < min_distance:
-            min_distance = distance
-            closest_color = color_name
-
-    return closest_color
+        # print("Predicted label:", predicted_label)
+        return predicted_label
+    except:
+        return 'Image is Corrupted'
 
 
 # ********************************Backend **************************
@@ -190,7 +161,6 @@ db = client["ValueHunt"]
 
 
 API = os.environ.get("ScrapyAPI")
-
 
 
 def compare(a, b):
@@ -217,6 +187,18 @@ def preprocessPrice(li):
     return li
 
 
+def checkTshirt(check_cat):
+
+    li=['t' , 't-' , 't-shirt' ,'t-shirt-' , 'tshirt' ,'tshirts','polo','layer']
+
+    for i in li:
+        if i in check_cat:
+            return True
+        
+    return False
+
+
+
 def getAmazonData(brand, color, style, category):
 
     amazon_output_data = []
@@ -240,6 +222,9 @@ def getAmazonData(brand, color, style, category):
     # chrome_options.add_argument('window-size=1920x1080')
     driver = webdriver.Chrome(service=Service(
         'chromedriver.exe'), options=options)
+    
+    if(category=='Shirt'):
+        category='Shirts'
 
     query = f'{color} {style} {category}'
 
@@ -257,6 +242,7 @@ def getAmazonData(brand, color, style, category):
     print('*****************************url******************')
     print(url)
     driver.get(url)
+    sleep(3)
 
     content = driver.page_source
 
@@ -275,6 +261,7 @@ def getAmazonData(brand, color, style, category):
             BrandCheck = prod.find(
                 'span', attrs={'class': 'a-size-base-plus a-color-base'})
 
+            
             if (Label):
                 Label = Label.get_text()
 
@@ -289,11 +276,20 @@ def getAmazonData(brand, color, style, category):
                 check_cate = Label.lower().split(' ')
                 category = category.lower()
 
-                if(category=='shirt' and ('t'  or 't-shirt' or 'tshirt' or 'tshirts') in check_cate):
-                    continue
-
+                
+                if (category == 'shirts'):
+                    category='shirt'
+                
                 if (category in check_cate):
 
+                    if (category == 'shirt' and checkTshirt(check_cate)):
+                        continue
+                    # if(category == 'shirt' and ('t-' or 't') in check_cate):
+                    #     print('+++++++++++++++++++---------------------------',category,temp,check_cate,ProdLink)
+                    # print('***************check category******')
+                    # print(category,temp,check_cate,ProdLink)
+                   
+                    
                     if (abrand != 'No Brand' and abrand == BrandCheck):
                         amazon_output_data.append(
                             {'ImageSrc': ImageSrc, 'Label': Label, 'Price': Price, "ProdLink": ProdLink})
@@ -316,6 +312,9 @@ def getAmazonData(brand, color, style, category):
 
 
 def getMyntraData(brand, color, style, category):
+
+    if(style=='plain'):
+        style='casual-plain'
 
     query = f'{color} {style} {category}'
 
@@ -360,6 +359,7 @@ def getMyntraData(brand, color, style, category):
     print(url)
 
     driver.get(url)
+    sleep(3)
 
     content = driver.page_source
     soup = BeautifulSoup(content, 'lxml')
@@ -413,15 +413,19 @@ def getMyntraData(brand, color, style, category):
 
 
 def getFlipkartData(brand, color, style, category):
-    flipkart_output_data = []
-    if category == 'Hat':
-        category = 'cap'
-    
+    # if category == 'Hat':
+    #     category = 'cap'
 
-    brandurl = f'https://www.flipkart.com/search?q={category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&color={color}&p[]=facets.brand%255B%255D%3D'
-    url = f'https://www.flipkart.com/search?q={category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&style={style}&color={color}'
+    color = color.capitalize()
+
+    flipkart_output_data = []
+    brandurl = f'https://www.flipkart.com/search?q={category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&style={style}&p%5B%5D=facets.color%255B%255D%3D{color}&p%5B%5D=facets.brand%255B%255D%3D'
+    # if category == 'Hat':
+    #     category = 'cap'
+
+    # brandurl = f'https://www.flipkart.com/search?q={category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&color={color}&p[]=facets.brand%255B%255D%3D'
+    url = f'https://www.flipkart.com/search?q={category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&style={style}&p%5B%5D=facets.color%255B%255D%3D{color}'
     prodLink = 'https://www.flipkart.com'
-    rurl = ''
     if brand == 'No Brand' or brand == '':
         response = requests.get(url)
         queryURL = url
@@ -443,7 +447,7 @@ def getFlipkartData(brand, color, style, category):
             prLink = pr.find_all('a', {'class': '_2UzuFa'})
             prImageLink = pr.find_all('img', {'class': '_2r_T1I'})
             for itemImageSrc, itemName, itemPrice, itemLink in zip(prImageLink, prName, prPrice, prLink):
-                if itemLink.find('span', {'class': '_192laR'}) is None and (category.lower() in itemName.text.lower().split(' ') or (category=='Hoodie' and ('full' and 'sleeve' )in itemName.text.lower().split(' '))):
+                if itemLink.find('span', {'class': '_192laR'}) is None and (category.lower() in itemName.text.lower().split(' ') or (category == 'Hoodie' and ('full' and 'sleeve') in itemName.text.lower().split(' ')) or (category == 'T-Shirt' and (('T' and 'Shirt') or ('t' and 'shirt') or ('t-shirt') or ('T-Shirt') or ('T' and 'shirt') or ('t' and 'Shirt')) in itemName.text.lower().split(' '))):
                     flipkart_output_data.append({'ImageSrc': (itemImageSrc.get(
                         'src')), 'Label': itemName.text, 'Price': itemPrice.text[1:], 'ProdLink': prodLink+(itemLink.get('href'))})
 
@@ -479,7 +483,7 @@ def getAjioData(brand, color, style, category):
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--no-sandbox')
 
-    url = f'https://www.ajio.com/search/?text={style} {color} {category}'
+    url = f'https://www.ajio.com/search/?text={style} {color} {category}&gridColumns=5'
     driver = webdriver.Chrome(
         options=options, service=ChromeService('chromedriver.exe'))
     try:
@@ -534,15 +538,6 @@ def getAjioData(brand, color, style, category):
         return ajio_output_data
     except Exception as e:
         return f'Something went Wrong {e}'
-
-
-def getColor(clothImg_bytes):
-    try:
-        # It returns list of hex code
-        hexCode = get_colors(clothImg_bytes, 1)[0]
-        return closest_color(hexCode), hexCode
-    except:
-        return 'Your Image is Corupted', hexCode
 
 
 # ***************************** Validator ****************
@@ -643,25 +638,23 @@ def vh():
 
             category = category_future.result()
             style = style_future.result()
-            color, hexCode = color_future.result()
+            color = color_future.result()
 
-        print('********************Style*************************')
+        print('********************  Style    *************************')
         print(style)
         print('*********************************************')
 
-        print('******************Category***************************')
+        print('******************      Category   ***************************')
         print(category)
         print('*********************************************')
 
         print(
-            '******************   Color and Hex code of image   ***************************')
-        print(color, ' and Hex code  : ', hexCode)
+            '******************   Color ***************************')
+        print(color)
         print('*********************************************')
 
         if (category == 'Image is Corrupted' or style == 'Image is Corrupted' or color == 'Your Image is Corupted'):
             return jsonify('Image is Corrupted')
-
-   
 
         with ThreadPoolExecutor(max_workers=4) as executor:
 
@@ -681,7 +674,6 @@ def vh():
             ajio = ajio_future.result()
             flipkart = flipkart_future.result()
 
-     
         print('******************   Amazon     ***************************')
         print(amazon)
         print('*********************************************')
@@ -695,10 +687,10 @@ def vh():
         print('*********************    Ajio    ************************')
         print(ajio)
         print('*********************************************')
-       
+
         res = jsonify({'amazon': amazon, 'myntra': myntra,
                       'flipkart': flipkart, 'ajio': ajio})
-       
+  
         return res
 
     return jsonify('You are not authenticated')
