@@ -383,18 +383,16 @@ def getMyntraData(brand, color, style, category):
 
 
 def getFlipkartData(brand, color, style, category):
-    # if category == 'Hat':
-    #     category = 'cap'
+    if ' 'in style:
+        style = style.replace(' ','+')
 
     color = color.capitalize()
 
     flipkart_output_data = []
-    brandurl = f'https://www.flipkart.com/search?q={category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&style={style}&p%5B%5D=facets.color%255B%255D%3D{color}&p%5B%5D=facets.brand%255B%255D%3D'
-    # if category == 'Hat':
-    #     category = 'cap'
-
-    # brandurl = f'https://www.flipkart.com/search?q={category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&color={color}&p[]=facets.brand%255B%255D%3D'
-    url = f'https://www.flipkart.com/search?q={category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&style={style}&p%5B%5D=facets.color%255B%255D%3D{color}'
+    
+    brandurl = f'https://www.flipkart.com/search?q={style}%20{category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&p%5B%5D=facets.color%255B%255D%3D{color}&p%5B%5D=facets.brand%255B%255D%3D'
+    url = f'https://www.flipkart.com/search?q={style}%20{category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&p%5B%5D=facets.color%255B%255D%3D{color}'
+    
     prodLink = 'https://www.flipkart.com'
     if brand == 'No Brand' or brand == '':
         response = requests.get(url)
@@ -453,12 +451,14 @@ def getAjioData(brand, color, style, category):
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--no-sandbox')
 
+    if ' 'in style:
+        style = style.replace(' ','+')
 
     color = color.capitalize()
     if category == 'Jeans':
         url = f'https://www.ajio.com/s/jeans-3571-88891?query=%3Arelevance%3Averticalcolorfamily%3A{color}&curated=true&curatedid=jeans-3571-88891&gridColumns=5&segmentIds='
     else:
-        url = f'https://www.ajio.com/search/?text={style} {color} {category}&gridColumns=5'
+        url = f'https://www.ajio.com/search/?text={style}%20{color}%20{category}&gridColumns=5'
     driver = webdriver.Chrome(
         options=options, service=ChromeService('chromedriver.exe'))
     try:
