@@ -552,7 +552,7 @@ def insertContact(name, email, msg):
 # ********************************Insert Vh*****************************
 
 
-def insertVh(clothImg, brand):
+def insertVh(clothImg, cagtegory,style,color):
 
     try:
         im = Image.open(clothImg)
@@ -564,7 +564,9 @@ def insertVh(clothImg, brand):
         }
         col = db["VH"]
         data = {'clothImg': image,
-                'brand': brand}
+                'category': cagtegory,
+                'style':style,
+                'color':color}
 
         if (col.find_one(data)):
 
@@ -610,7 +612,7 @@ def vh():
 
         brand = request.form.get('brand')
 
-        insertVh(clothImg, brand)
+        
 
         with ThreadPoolExecutor(max_workers=3) as executor:
 
@@ -636,6 +638,8 @@ def vh():
             '******************   Color ***************************')
         print(color)
         print('*********************************************')
+
+        insertVh(clothImg, category,style,color)
 
         if (category == 'Image is Corrupted' or style == 'Image is Corrupted' or color == 'Your Image is Corupted'):
             return jsonify('Image is Corrupted')
