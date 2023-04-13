@@ -23,11 +23,6 @@ from tensorflow import keras
 import functools
 from concurrent.futures import ThreadPoolExecutor
 
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
-
 
 cate_model = load_model('./category.h5')
 style_model = load_model('./style.h5')
