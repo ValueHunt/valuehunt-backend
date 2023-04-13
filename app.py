@@ -25,7 +25,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 
 cate_model = load_model('./category.h5')
-style_model = load_model('./style.h5')
+style_model = load_model('./styles.h5')
 color_model = load_model('./Color.h5')
 
 
