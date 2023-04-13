@@ -59,7 +59,7 @@ def getCategory(img_byte):
 
 def getStyle(image):
     try:
-        classes=['chevron', 'floral', 'plain', 'polka dot', 'stripes']
+        classes = ['chevron', 'floral', 'plain', 'polka dot', 'stripes']
         image_pil = Image.open(io.BytesIO(image))
         image_np = np.array(image_pil)
         image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
@@ -69,7 +69,8 @@ def getStyle(image):
         crop_width = crop_height = min(width, height)
         crop_x = center_x - crop_width // 2
         crop_y = center_y - crop_height // 2
-        image_cropped = image_bgr[crop_y:crop_y+crop_height, crop_x:crop_x+crop_width]
+        image_cropped = image_bgr[crop_y:crop_y +
+                                  crop_height, crop_x:crop_x+crop_width]
         image_resized = cv2.resize(image_cropped, (224, 224))
         image_normalized = image_resized.astype(np.float32) / 255.0
         image_batch = np.expand_dims(image_normalized, axis=0)
@@ -78,7 +79,6 @@ def getStyle(image):
         return pred_class
     except:
         return 'Image is Corrupted'
-
 
 
 # ***************************** Color Model ************************
@@ -147,14 +147,14 @@ def preprocessPrice(li):
 
 def checkTshirt(check_cat):
 
-    li=['t' , 't-' , 't-shirt' ,'t-shirt-' , 'tshirt' ,'tshirts','polo','layer']
+    li = ['t', 't-', 't-shirt', 't-shirt-',
+          'tshirt', 'tshirts', 'polo', 'layer']
 
     for i in li:
         if i in check_cat:
             return True
-        
-    return False
 
+    return False
 
 
 def getAmazonData(brand, color, style, category):
@@ -181,9 +181,9 @@ def getAmazonData(brand, color, style, category):
     # chrome_options.add_argument('window-size=1920x1080')
     driver = webdriver.Chrome(service=Service(
         'chromedriver.exe'), options=options)
-    
-    if(category=='Shirt'):
-        category='Shirts'
+
+    if (category == 'Shirt'):
+        category = 'Shirts'
 
     query = f'{color} {style} {category}'
 
@@ -220,7 +220,6 @@ def getAmazonData(brand, color, style, category):
             BrandCheck = prod.find(
                 'span', attrs={'class': 'a-size-base-plus a-color-base'})
 
-            
             if (Label):
                 Label = Label.get_text()
 
@@ -235,10 +234,9 @@ def getAmazonData(brand, color, style, category):
                 check_cate = Label.lower().split(' ')
                 category = category.lower()
 
-                
                 if (category == 'shirts'):
-                    category='shirt'
-                
+                    category = 'shirt'
+
                 if (category in check_cate):
 
                     if (category == 'shirt' and checkTshirt(check_cate)):
@@ -247,8 +245,7 @@ def getAmazonData(brand, color, style, category):
                     #     print('+++++++++++++++++++---------------------------',category,temp,check_cate,ProdLink)
                     # print('***************check category******')
                     # print(category,temp,check_cate,ProdLink)
-                   
-                    
+
                     if (abrand != 'No Brand' and abrand == BrandCheck):
                         amazon_output_data.append(
                             {'ImageSrc': ImageSrc, 'Label': Label, 'Price': Price, "ProdLink": ProdLink})
@@ -272,8 +269,8 @@ def getAmazonData(brand, color, style, category):
 
 def getMyntraData(brand, color, style, category):
 
-    if(style=='plain'):
-        style='casual-plain'
+    if (style == 'plain'):
+        style = 'casual-plain'
 
     query = f'{color} {style} {category}'
 
@@ -329,11 +326,8 @@ def getMyntraData(brand, color, style, category):
         # wait = WebDriverWait(driver, timeout=None)
         # wait.until(EC.invisibility_of_element(loader))
 
-
         content = driver.page_source
         soup = BeautifulSoup(content, 'lxml')
-
-        
 
         for element in soup.findAll('li', attrs={'class': 'product-base'}):
 
@@ -383,16 +377,20 @@ def getMyntraData(brand, color, style, category):
 
 
 def getFlipkartData(brand, color, style, category):
-    if ' 'in style:
-        style = style.replace(' ','+')
+    if ' ' in style:
+        style = style.replace(' ', '+')
 
     color = color.capitalize()
 
     flipkart_output_data = []
-    
+
     brandurl = f'https://www.flipkart.com/search?q={style}%20{category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&p%5B%5D=facets.color%255B%255D%3D{color}&p%5B%5D=facets.brand%255B%255D%3D'
-    url = f'https://www.flipkart.com/search?q={style}%20{category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&p%5B%5D=facets.color%255B%255D%3D{color}'
-    
+    if (category == 'Shirt'):
+        url = f'https://www.flipkart.com/search?q={style}%20casual%20{category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&p%5B%5D=facets.color%255B%255D%3D{color}'
+        brandurl = f'https://www.flipkart.com/search?q={style}%20casual%20{category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&p%5B%5D=facets.color%255B%255D%3D{color}&p%5B%5D=facets.brand%255B%255D%3D'
+    else:
+        url = f'https://www.flipkart.com/search?q={style}%20{category}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=on&sort=price_asc&p%5B%5D=facets.color%255B%255D%3D{color}'
+
     prodLink = 'https://www.flipkart.com'
     if brand == 'No Brand' or brand == '':
         response = requests.get(url)
@@ -451,14 +449,15 @@ def getAjioData(brand, color, style, category):
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--no-sandbox')
 
-    if ' 'in style:
-        style = style.replace(' ','+')
+    if ' ' in style:
+        style = style.replace(' ', '+')
 
     color = color.capitalize()
     if category == 'Jeans':
         url = f'https://www.ajio.com/s/jeans-3571-88891?query=%3Arelevance%3Averticalcolorfamily%3A{color}&curated=true&curatedid=jeans-3571-88891&gridColumns=5&segmentIds='
     else:
-        url = f'https://www.ajio.com/search/?text={style}%20{color}%20{category}&gridColumns=5'
+        url = f'https://www.ajio.com/search/?query=%3Aprce-asc&text={style}%20{color}%20{category}&gridColumns=5'
+        # url = f'https://www.ajio.com/search/?text={style}%20{color}%20{category}&gridColumns=5'
     driver = webdriver.Chrome(
         options=options, service=ChromeService('chromedriver.exe'))
     try:
@@ -466,17 +465,20 @@ def getAjioData(brand, color, style, category):
             queryURL = url
             driver.get(url)
         else:
+            brand = brand.upper()
             brandurl = ''
             if category == 'Jeans':
                 brand = brand.upper()
                 if ' ' in brand:
                     brand = brand.replace(' ', '%20')
                 brandurl += f'https://www.ajio.com/s/jeans-3571-88891?query=%3Arelevance%3Averticalcolorfamily%3A{color}%3Abrand%3A{brand}&curated=true&curatedid=jeans-3571-88891&gridColumns=5&segmentIds='
+                # brandurl += f'https://www.ajio.com/s/jeans-3571-88891?query=%3Arelevance%3Averticalcolorfamily%3A{color}%3Abrand%3A{brand}&curated=true&curatedid=jeans-3571-88891&gridColumns=5&segmentIds='
                 queryURL = brandurl
             else:
                 if ' ' in brand:
                     brand = brand.replace(' ', '%20')
-                brandurl += f'https://www.ajio.com/search/?query=%3Arelevance%3Abrand%3A{brand}&text={color} {category}&gridColumns=5'
+                brandurl += f'https://www.ajio.com/search/?query=%3Aprce-asc%3Abrand%3A{brand}%3Averticalcolorfamily%3A{color}&text={category}&gridColumns=3&segmentIds='
+                # brandurl += f'https://www.ajio.com/search/?query=%3Arelevance%3Abrand%3A{brand}&text={color} {category}&gridColumns=5'
                 queryURL = brandurl
                 driver.get(brandurl)
             driver.get(brandurl)
@@ -552,7 +554,7 @@ def insertContact(name, email, msg):
 # ********************************Insert Vh*****************************
 
 
-def insertVh(clothImg, cagtegory,style,color):
+def insertVh(clothImg, cagtegory, style, color):
 
     try:
         im = Image.open(clothImg)
@@ -565,8 +567,8 @@ def insertVh(clothImg, cagtegory,style,color):
         col = db["VH"]
         data = {'clothImg': image,
                 'category': cagtegory,
-                'style':style,
-                'color':color}
+                'style': style,
+                'color': color}
 
         if (col.find_one(data)):
 
@@ -612,8 +614,6 @@ def vh():
 
         brand = request.form.get('brand')
 
-        
-
         with ThreadPoolExecutor(max_workers=3) as executor:
 
             category_future = executor.submit(getCategory, image_bytes)
@@ -639,7 +639,7 @@ def vh():
         print(color)
         print('*********************************************')
 
-        insertVh(clothImg, category,style,color)
+        insertVh(clothImg, category, style, color)
 
         if (category == 'Image is Corrupted' or style == 'Image is Corrupted' or color == 'Your Image is Corupted'):
             return jsonify('Image is Corrupted')
@@ -678,7 +678,7 @@ def vh():
 
         res = jsonify({'amazon': amazon, 'myntra': myntra,
                       'flipkart': flipkart, 'ajio': ajio})
-  
+
         return res
 
     return jsonify('You are not authenticated')
