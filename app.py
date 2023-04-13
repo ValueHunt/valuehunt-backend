@@ -23,6 +23,12 @@ from tensorflow import keras
 import functools
 from concurrent.futures import ThreadPoolExecutor
 
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+
+
 cate_model = load_model('./category.h5')
 style_model = load_model('./style.h5')
 color_model = load_model('./Color.h5')
@@ -57,70 +63,27 @@ def getCategory(img_byte):
 
 
 def getStyle(image):
-
     try:
-
-        classes = ['animal', 'cartoon', 'chevron', 'floral', 'geometry', 'houndstooth', 'ikat', 'letter_numb', 'plain', 'polka dot', 'scales', 'skull', 'squares',
-                   'stars',
-                   'stripes',
-                   'tribal']
-
+        classes=['chevron', 'floral', 'plain', 'polka dot', 'stripes']
         image_pil = Image.open(io.BytesIO(image))
-
         image_np = np.array(image_pil)
-
-        # Convert RGB image to BGR
         image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
-        # image_bgr = cv2.imread(file_path, cv2.IMREAD_COLOR)  Previous code
-
-        # Convert to HSV for creating a mask
-        image_hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
-
-        # Convert to grayscale that will actually be used for training, instead of color image
-        image_gray = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
-
-        # Create a mask that detects the red rectangular tags present in each image
-        mask = cv2.inRange(image_hsv, (0, 255, 255), (0, 255, 255))
-
-        # Get the coordinates of the red rectangle in the image,
-        # But take entire image if mask fails to detect the red rectangle
-        if len(np.where(mask != 0)[0]) != 0:
-            y1 = min(np.where(mask != 0)[0])
-            y2 = max(np.where(mask != 0)[0])
-        else:
-            y1 = 0
-            y2 = len(mask)
-
-        if len(np.where(mask != 0)[1]) != 0:
-            x1 = min(np.where(mask != 0)[1])
-            x2 = max(np.where(mask != 0)[1])
-        else:
-            x1 = 0
-            x2 = len(mask[0])
-
-        # Crop the grayscle image along those coordinates
-        image_cropped = image_gray[y1:y2, x1:x2]
-
-        # Resize the image to 100x100 pixels size
-        image_100x100 = cv2.resize(image_cropped, (100, 100))
-
-        # Save image as in form of array of 10000x1
-        image_arr = image_100x100.flatten()
-
-        image_arr = image_arr/255
-        image_arr = image_arr.reshape(1, 100, 100, 1)
-        pred = np.round(style_model.predict(image_arr))
-
-        if len(pred[0]) > 1:  # check for multi-class
-            # if more than one output, take the max
-            pred_class = classes[pred.argmax()]
-        else:
-            # if only one output, round
-            pred_class = classes[int(tf.round(pred)[0][0])]
-
+        height, width, _ = image_bgr.shape
+        center_x = width // 2
+        center_y = height // 2
+        crop_width = crop_height = min(width, height)
+        crop_x = center_x - crop_width // 2
+        crop_y = center_y - crop_height // 2
+        image_cropped = image_bgr[crop_y:crop_y+crop_height, crop_x:crop_x+crop_width]
+        image_resized = cv2.resize(image_cropped, (224, 224))
+        image_normalized = image_resized.astype(np.float32) / 255.0
+        image_batch = np.expand_dims(image_normalized, axis=0)
+        pred = style_model.predict(image_batch)
+        pred_class = classes[np.argmax(pred)]
         return pred_class
     except:
         return 'Image is Corrupted'
+
 
 
 # ***************************** Color Model ************************
@@ -207,6 +170,7 @@ def getAmazonData(brand, color, style, category):
 
     options = webdriver.ChromeOptions()
     options.headless = True
+    options.add_argument('--log-level=3')
     options.add_argument(f'user-agent={user_agent}')
     options.add_argument("--window-size=1920,1080")
     options.add_argument('--ignore-certificate-errors')
@@ -328,6 +292,7 @@ def getMyntraData(brand, color, style, category):
     options = webdriver.ChromeOptions()
     options.headless = True
     options.add_argument(f'user-agent={user_agent}')
+    options.add_argument('--log-level=3')
     options.add_argument("--window-size=1920,1080")
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--allow-running-insecure-content')
@@ -359,12 +324,22 @@ def getMyntraData(brand, color, style, category):
     print(url)
 
     driver.get(url)
-    sleep(3)
-
-    content = driver.page_source
-    soup = BeautifulSoup(content, 'lxml')
+    # sleep(3)
 
     try:
+        # loader = driver.find_element(By.ID,"spinner-spinner")
+        # print('+++++++++++++++++Loarder-------',loader)
+
+        # # Wait until the loader element disappears
+        # wait = WebDriverWait(driver, timeout=None)
+        # wait.until(EC.invisibility_of_element(loader))
+
+
+        content = driver.page_source
+        soup = BeautifulSoup(content, 'lxml')
+
+        
+
         for element in soup.findAll('li', attrs={'class': 'product-base'}):
 
             prod = element.find('a')
@@ -383,7 +358,7 @@ def getMyntraData(brand, color, style, category):
                 # print('.....................',Price)
 
             if (ImageSrc and Price):
-                # print('......................................')
+                # print('...............+++++++++++Testing+++++++++++++++++.......................')
                 # print(ProdLink,Price)
                 ImageSrc = ImageSrc.find('img')['src']
                 Price = Price.get_text().split()[1]
