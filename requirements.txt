@@ -9,3 +9,4 @@ selenium
 tensorflow
 tensorflow-intel
 gunicorn
+python-dotenv

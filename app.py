@@ -18,8 +18,10 @@ import tensorflow as tf
 import numpy as np
 from tensorflow import keras
 
+from dotenv import load_dotenv
 import functools
 from concurrent.futures import ThreadPoolExecutor
+load_dotenv()
 
 cate_model = load_model('./category.h5',compile=False)
 style_model = load_model('./styles.h5',compile=False)
@@ -60,16 +62,7 @@ def getStyle(image):
     try:
         classes = ['chevron', 'floral', 'plain', 'polka dot', 'stripes']
         image_pil = Image.open(io.BytesIO(image))
-        # image_np = np.array(image_pil)
-        # image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
-        # height, width, _ = image_bgr.shape
-        # center_x = width // 2
-        # center_y = height // 2
-        # crop_width = crop_height = min(width, height)
-        # crop_x = center_x - crop_width // 2
-        # crop_y = center_y - crop_height // 2
-        # image_cropped = image_bgr[crop_y:crop_y +
-                                #   crop_height, crop_x:crop_x+crop_width]
+
         image_resized = image_pil.resize((224, 224))
         img = np.array(image_resized)
         # Rescale the image (get all values between 0 and 1)
