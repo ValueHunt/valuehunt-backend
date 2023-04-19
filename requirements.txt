@@ -1,0 +1,11 @@
+beautifulsoup4
+Flask
+Flask-Cors
+numpy
+Pillow
+pymongo
+requests
+selenium
+tensorflow
+tensorflow-intel
+gunicorn
