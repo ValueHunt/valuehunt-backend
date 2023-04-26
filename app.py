@@ -160,7 +160,10 @@ def checkTshirt(check_cat):
 
     return False
 
-
+def checkForTshirt(check_cate):
+    if 'bra' in check_cate:
+        return True
+    return False
 
 def getAmazonData(brand, color, style, category):
 
@@ -245,8 +248,10 @@ def getAmazonData(brand, color, style, category):
 
                     if (category == 'shirt' and checkTshirt(check_cate)):
                         continue
-                    # if(category == 'shirt' and ('t-' or 't') in check_cate):
-                    #     print('+++++++++++++++++++---------------------------',category,temp,check_cate,ProdLink)
+
+                    if(category == 't-shirt' and  checkForTshirt(check_cate)):
+                        continue
+
                     # print('***************check category******')
                     # print(category,temp,check_cate,ProdLink)
 
