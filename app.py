@@ -664,6 +664,10 @@ def vh():
             ajio = ajio_future.result()
             flipkart = flipkart_future.result()
 
+        amazon=getAmazonData(brand, color, style, category)
+        myntra=getMyntraData(brand, color, style, category)
+        flipkart= getFlipkartData(brand, color, style, category)
+        ajio= getAjioData(brand, color, style, category)
         print('******************   Amazon     ***************************')
         print(amazon)
         print('*********************************************')
