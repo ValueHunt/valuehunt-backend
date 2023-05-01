@@ -18,10 +18,12 @@ import tensorflow as tf
 import numpy as np
 from tensorflow import keras
 
+import json
 from dotenv import load_dotenv
 import functools
 from concurrent.futures import ThreadPoolExecutor
 load_dotenv()
+
 
 cate_model = load_model('./category.h5',compile=False)
 style_model = load_model('./styles.h5',compile=False)
@@ -114,15 +116,12 @@ def getColor(clothImg_bytes):
 actual_token = os.environ.get("token")
 pw =  os.environ.get("pw")
 
-print('+++++++++++++++++++++Token++++++++++++++++++++++',actual_token)
-print('+++++++++++++++++++++pw++++++++++++++++++++++',pw)
+#print('+++++++++++++++++++++Token++++++++++++++++++++++',actual_token)
+#print('+++++++++++++++++++++pw++++++++++++++++++++++',pw)
 
 
 client = pymongo.MongoClient(f"mongodb+srv://a7coder:{pw}@portfolio.l6fr7hn.mongodb.net/")
 db = client["ValueHunt"]
-
-
-API = os.environ.get("ScrapyAPI")
 
 
 def compare(a, b):
@@ -165,14 +164,15 @@ def checkForTshirt(check_cate):
         return True
     return False
 
-def getAmazonData(brand, color, style, category):
 
+def getAmazonData(brand, color, style, category):
+    
     amazon_output_data = []
     abrand = brand
-    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36"
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.48"
 
     options = webdriver.ChromeOptions()
-    options.headless = True
+    options.add_argument('--headless')
     options.add_argument('--log-level=3')
     options.add_argument(f'user-agent={user_agent}')
     options.add_argument("--window-size=1920,1080")
@@ -185,10 +185,13 @@ def getAmazonData(brand, color, style, category):
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--no-sandbox')
     options.add_argument('ignore-certificate-errors')
-    # chrome_options.add_argument('window-size=1920x1080')
-    
-    driver = webdriver.Chrome(executable_path='./chromedriver',options=options)
-    
+    options.add_argument("--disable-extensions") 
+    try:
+        driver = webdriver.Chrome('chromedriver.exe',options=options)
+           
+    except Exception as e:
+        return jsonify({'error':str(e)})
+    #return jsonify('drive.chorme')
     if (category == 'Shirt'):
         category = 'Shirts'
 
@@ -207,15 +210,37 @@ def getAmazonData(brand, color, style, category):
     url += '&s=price-asc-rank'
     print('*****************************url******************')
     print(url)
+    
     driver.get(url)
-    sleep(3)
+    #print(f'http://api.scraperapi.com?api_key={API}&url={url}') 
+    #s = requests.Session()
+    #res = requests.get(f'http://api.scraperapi.com?api_key={API}&url={url}')
+    
+    x=0
+    height = driver.execute_script(
+                "return document.body.scrollHeight")
+    while True:
+            driver.execute_script(
+                f"window.scrollTo({x},{x+400});")
+            sleep(.5)
+          
+            x=x+400
+            #print(f'x : {x}   , h : {height}')
+            if x >=  height:
+                break
 
+    sleep(5)
     content = driver.page_source
-
+    #return jsonify(content)
+    driver.quit()
     soup = BeautifulSoup(content, 'lxml')
+    #print('This is Amazon COntent')
+    #print(content) 
     try:
+        
+        
         for prod in soup.findAll('div', attrs={'class': 'a-section a-spacing-base a-text-center'}):
-            # print('*********************3333333333333333333333333****************')
+            #print('*********************3333333333333333333333333****************')
             ProdLink = prod.find(
                 'a', attrs={'class': 'a-link-normal s-no-outline'})['href']
             ProdLink = 'https://www.amazon.in/'+ProdLink
@@ -251,7 +276,8 @@ def getAmazonData(brand, color, style, category):
 
                     if(category == 't-shirt' and  checkForTshirt(check_cate)):
                         continue
-
+                    # if(category == 'shirt' and ('t-' or 't') in check_cate):
+                    #     print('+++++++++++++++++++---------------------------',category,temp,check_cate,ProdLink)
                     # print('***************check category******')
                     # print(category,temp,check_cate,ProdLink)
 
@@ -268,11 +294,13 @@ def getAmazonData(brand, color, style, category):
             amazon_output_data, key=functools.cmp_to_key(compare))
 
         amazon_output_data = amazon_output_data[:4]
-
+        #driver.quit()
         if (len(amazon_output_data) == 0):
             return 'No Data Found'
+        
         return amazon_output_data
     except Exception as e:
+        
         return f'Something went Wrong'
 
 
@@ -288,10 +316,10 @@ def getMyntraData(brand, color, style, category):
 
     myntra_output_data = []
 
-    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36"
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
 
     options = webdriver.ChromeOptions()
-    options.headless = True
+    options.add_argument('--headless')
     options.add_argument(f'user-agent={user_agent}')
     options.add_argument('--log-level=3')
     options.add_argument("--window-size=1920,1080")
@@ -304,8 +332,8 @@ def getMyntraData(brand, color, style, category):
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--no-sandbox')
     options.add_argument('ignore-certificate-errors')
-    driver = webdriver.Chrome(executable_path='./chromedriver',options=options)
-
+    driver = webdriver.Chrome('chromedriver.exe',options=options)
+   
     query = query.replace(' ', '-')
     url = "https://www.myntra.com/"+query
 
@@ -323,56 +351,37 @@ def getMyntraData(brand, color, style, category):
     print(url)
 
     driver.get(url)
-    sleep(3)
+    #res=requests.get(f'http://api.scraperapi.com?api_key={API}&url={url}')
+    #sleep(10)
+    script_elem = driver.find_element('xpath',"//script[contains(., 'window.__myx = ')]")
+    json_str = script_elem.get_attribute("innerHTML").split("window.__myx = ")[1].split(";")[0]
+    json_obj = json.loads(json_str)
+    products=json_obj['searchData']['results']['products']
 
-    try:
+    for prod in products:
+        myntra_output_data.append(
+                    {'ImageSrc': 'https'+prod["searchImage"][4:], 'Label': prod['product'], 'Price':str(prod["price"]), "ProdLink": 'https://www.myntra.com/'+prod['landingPageUrl']})
     
+  
+    #content = driver.page_source
+        
+    #soup = BeautifulSoup(content, 'lxml')
+   
+    #print('***********************This is Myntra Content**********************')
+    # access the properties you need
+    
+    
+    #myntra_output_data = preprocessPrice(myntra_output_data)
 
-        content = driver.page_source
-        soup = BeautifulSoup(content, 'lxml')
-
-        for element in soup.findAll('li', attrs={'class': 'product-base'}):
-
-            prod = element.find('a')
-            Label = prod.find('h4', attrs={'class': "product-product"}).text
-
-            ProdLink = 'https://www.myntra.com/'+prod['href']
-            ImageSrc = prod.find('source')
-
-            Price = prod.find(
-                'div', attrs={'class': 'product-price'})
-
-            disP = Price.find(
-                'span', attrs={'class': 'product-discountedPrice'})
-            if (disP):
-                Price = disP
-                # print('.....................',Price)
-
-            if (ImageSrc and Price):
-                # print('...............+++++++++++Testing+++++++++++++++++.......................')
-                # print(ProdLink,Price)
-                ImageSrc = ImageSrc.find('img')['src']
-                Price = Price.get_text().split()[1]
-
-                myntra_output_data.append(
-                    {'ImageSrc': ImageSrc, 'Label': Label, 'Price': Price, "ProdLink": ProdLink})
-            else:
-                ImageSrc = None
-                Price = None
-
-        myntra_output_data = preprocessPrice(myntra_output_data)
-
-        myntra_output_data = sorted(
+    myntra_output_data = sorted(
             myntra_output_data, key=functools.cmp_to_key(compare))
 
-        myntra_output_data = myntra_output_data[:4]
-
-        if (len(myntra_output_data) == 0):
-            return 'No Data Found'
-
-        return myntra_output_data
-    except:
+    myntra_output_data = myntra_output_data[:4]
+    driver.quit()
+    if (len(myntra_output_data) == 0):
         return 'No Data Found'
+    
+    return myntra_output_data
 
 
 # ********************** Flipkart ****************************
@@ -694,10 +703,6 @@ def vh():
 def hello():
     print('**************************Working****************************')
     return "<p>Hello, World!</p>"
-
-
-
-
 
 
 if __name__ == '__main__':
