@@ -19,10 +19,6 @@ from tensorflow.keras.models import load_model
 import tensorflow as tf
 import numpy as np
 from tensorflow import keras
-<<<<<<< HEAD
-
-=======
->>>>>>> 17f0ba2c6785851f39bfc10df3f1eeb90a27a801
 import json
 from dotenv import load_dotenv
 import functools
@@ -121,13 +117,8 @@ def getColor(clothImg_bytes):
 
 actual_token = os.environ.get("token")
 pw =  os.environ.get("pw")
-<<<<<<< HEAD
 
 #print('+++++++++++++++++++++Token++++++++++++++++++++++',actual_token)
-=======
-API =  os.environ.get('API')
-#print('+++++++++++++++++++++API++++++++++++++++++++++',API)
->>>>>>> 17f0ba2c6785851f39bfc10df3f1eeb90a27a801
 #print('+++++++++++++++++++++pw++++++++++++++++++++++',pw)
 
 
@@ -198,11 +189,7 @@ def getAmazonData(brand, color, style, category):
     options.add_argument('ignore-certificate-errors')
     options.add_argument("--disable-extensions") 
     try:
-<<<<<<< HEAD
-        driver = webdriver.Chrome('chromedriver.exe',options=options)
-=======
-        driver = webdriver.Chrome('/usr/lib/chromium-browser/chromedriver',options=options)
->>>>>>> 17f0ba2c6785851f39bfc10df3f1eeb90a27a801
+        driver = webdriver.Chrome('./chromedriver.exe',options=options)
            
     except Exception as e:
         return jsonify({'error':str(e)})
@@ -226,11 +213,7 @@ def getAmazonData(brand, color, style, category):
     print('*****************************url******************')
     print(url)
     
-<<<<<<< HEAD
     driver.get(url)
-=======
-    driver.get(f'http://api.scraperapi.com?api_key={API}&url={url}')
->>>>>>> 17f0ba2c6785851f39bfc10df3f1eeb90a27a801
     #print(f'http://api.scraperapi.com?api_key={API}&url={url}') 
     #s = requests.Session()
     #res = requests.get(f'http://api.scraperapi.com?api_key={API}&url={url}')
@@ -339,11 +322,7 @@ def getMyntraData(brand, color, style, category):
 
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
-<<<<<<< HEAD
     options.add_argument(f'user-agent={user_agent}')
-=======
-    #options.add_argument(f'user-agent={user_agent}')
->>>>>>> 17f0ba2c6785851f39bfc10df3f1eeb90a27a801
     options.add_argument('--log-level=3')
     options.add_argument("--window-size=1920,1080")
     options.add_argument('--allow-running-insecure-content')
@@ -355,11 +334,7 @@ def getMyntraData(brand, color, style, category):
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--no-sandbox')
     options.add_argument('ignore-certificate-errors')
-<<<<<<< HEAD
-    driver = webdriver.Chrome('chromedriver.exe',options=options)
-=======
-    driver = webdriver.Chrome('/usr/lib/chromium-browser/chromedriver',options=options)
->>>>>>> 17f0ba2c6785851f39bfc10df3f1eeb90a27a801
+    driver = webdriver.Chrome('./chromedriver.exe',options=options)
    
     query = query.replace(' ', '-')
     url = "https://www.myntra.com/"+query
@@ -377,11 +352,7 @@ def getMyntraData(brand, color, style, category):
     print('*****************************url******************')
     print(url)
 
-<<<<<<< HEAD
     driver.get(url)
-=======
-    driver.get(f'http://api.scraperapi.com?api_key={API}&url={url}')
->>>>>>> 17f0ba2c6785851f39bfc10df3f1eeb90a27a801
     #res=requests.get(f'http://api.scraperapi.com?api_key={API}&url={url}')
     #sleep(10)
     script_elem = driver.find_element('xpath',"//script[contains(., 'window.__myx = ')]")
@@ -413,10 +384,6 @@ def getMyntraData(brand, color, style, category):
         return 'No Data Found'
     
     return myntra_output_data
-<<<<<<< HEAD
-=======
-    
->>>>>>> 17f0ba2c6785851f39bfc10df3f1eeb90a27a801
 
 
 # ********************** Flipkart ****************************
@@ -495,7 +462,7 @@ def getAjioData(brand, color, style, category):
     options.add_argument('--disable-gpu')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--no-sandbox')
-    driver = webdriver.Chrome('/usr/lib/chromium-browser/chromedriver',options=options)
+    driver = webdriver.Chrome('./chromedriver.exe',options=options)
     
     if ' ' in style:
         style = style.replace(' ', '+')
@@ -714,25 +681,11 @@ def vh():
             myntra = myntra_future.result()
             ajio = ajio_future.result()
             flipkart = flipkart_future.result()
-<<<<<<< HEAD
 
         amazon=getAmazonData(brand, color, style, category)
         myntra=getMyntraData(brand, color, style, category)
         flipkart= getFlipkartData(brand, color, style, category)
         ajio= getAjioData(brand, color, style, category)
-=======
-        
-        #amazon=getAmazonData(brand, color, style, category)
-        #return jsonify({"amazon":amazon})
-        #myntra=getMyntraData(brand, color, style, category)
-        #return jsonify({"amazon":amazon,"myntra":myntra})
-        #flipkart= getFlipkartData(brand, color, style, category)
-        #return jsonify({'f':flipkart})
-        #ajio= getAjioData(brand, color, style, category)
-        #return jsonify(myntra)
-        
-           
->>>>>>> 17f0ba2c6785851f39bfc10df3f1eeb90a27a801
         print('******************   Amazon     ***************************')
         print(amazon)
         print('*********************************************')
@@ -760,14 +713,11 @@ def hello():
     print('**************************Working****************************')
     return "<p>Hello! ValueHunt User, ||  This is A7Coder </p>"
 
-<<<<<<< HEAD
-=======
 
 
-CORS(app, origins=['https://valuehunt-a7coder.vercel.app'])
+CORS(app)
 #app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10 MB
 
 
->>>>>>> 17f0ba2c6785851f39bfc10df3f1eeb90a27a801
 if __name__ == '__main__':
    app.run(debug=True,host='0.0.0.0')
