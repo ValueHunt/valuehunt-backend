@@ -654,15 +654,12 @@ def vh():
             '******************   Color ***************************')
         print(color)
         print('*********************************************')
-
-        
-
-        insertVh(clothImg, category, style, color)
+     
 
         if (category == 'Image is Corrupted' or style == 'Image is Corrupted' or color == 'Your Image is Corupted'):
             return jsonify('Image is Corrupted')
         
-        
+        insertVh(clothImg, category, style, color)
         
         with ThreadPoolExecutor(max_workers=4) as executor:
 
