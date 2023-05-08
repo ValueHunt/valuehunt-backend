@@ -562,7 +562,7 @@ def insertContact(name, email, msg):
 
         user_id = col.insert_one(data).inserted_id
 
-        return jsonify('Contact Details has been Saved')
+        return jsonify('Saved ✅')
 
     except:
         return jsonify("It's our problem not yours")
