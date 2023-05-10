@@ -7,6 +7,8 @@ the category, color and style. We then use this information to search across top
 Amazon, Flipkart, Ajio, and Myntra to provide you with the lowest possible price for that particular 
 clothing item.
 
+## Important -> The site backend has been shut down as it is deployed in Azure and Currently I am out of Credits. Till then You can see The Screenshots
+
 ## About
 
 This project is in the field of e-commerce and artificial intelligence. We use cutting-edge AI 
