@@ -48,4 +48,3 @@ We have used the following technologies:
 ### Sample Image 2
 ![Sample Image 2](https://raw.githubusercontent.com/a7coder/valuehunt/main/Screenshots/sample_input2.jpg)
 ![Sample Image](https://raw.githubusercontent.com/a7coder/valuehunt/main/Screenshots/sample_output2.png)
-
